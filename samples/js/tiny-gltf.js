@@ -137,8 +137,6 @@ function setWorldMatrix(gltf, node, parentWorldMatrix) {
 }
 
 export class TinyGltf {
-  loadImageSlots = undefined;
-
   async loadFromUrl(url) {
     const i = url.lastIndexOf('/');
     const baseUrl = (i !== 0) ? url.substring(0, i + 1) : '';
@@ -245,17 +243,6 @@ export class TinyGltf {
     // then scan through all the materials first and gather the image IDs for only those images.
     // (This feature really only makes sense for this specific set of samples.)
     let activeImageSet;
-    if (this.loadImageSlots) {
-      activeImageSet = new Set();
-      for (const material of json.materials) {
-        for (const imageChannel of this.loadImageSlots) {
-          const texture = material[imageChannel] ?? material.pbrMetallicRoughness[imageChannel];
-          if (texture !== undefined) {
-            activeImageSet.add(json.textures[texture.index].source);
-          }
-        }
-      }
-    }
 
     // Images
     const pendingImages = [];

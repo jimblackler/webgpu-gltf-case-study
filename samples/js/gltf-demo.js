@@ -14,6 +14,8 @@ const GltfModels = {
   damaged_helmet: `${GltfRootDir}/DamagedHelmet/glTF-Binary/DamagedHelmet.glb`,
   flight_helmet: `${GltfRootDir}/FlightHelmet/glTF/FlightHelmet.gltf`,
   sponza: `./sponza-optimized/Sponza.gltf`,
+  mc_laren: `${GltfRootDir}/McLaren.glb`,
+  porsche_gt3_rs: `${GltfRootDir}/porsche_gt3_rs.glb`,
 };
 
 // Runs the basic render loop, model switching, and camera handling.
@@ -48,23 +50,11 @@ export class GltfDemo extends TinyWebGpuDemo {
 
   onInit(device) {
     this.gltfLoader = new TinyGltfWebGpu(device);
-    this.gltfLoader.loadImageSlots = this.rendererClass.loadImageSlots;
 
     this.onLoadModel(device, this.model);
-
-    this.statsFolder.addMonitor(gpuResourceStats, 'pipelineCount');
-    this.statsFolder.addMonitor(gpuResourceStats, 'bindGroupCount');
-
-    this.statsFolder.addMonitor(gpuFrameStats, 'pipelineSets');
-    this.statsFolder.addMonitor(gpuFrameStats, 'bindGroupSets');
-    this.statsFolder.addMonitor(gpuFrameStats, 'bufferSets');
-    this.statsFolder.addMonitor(gpuFrameStats, 'drawCount');
-    this.statsFolder.addMonitor(gpuFrameStats, 'instanceCount');
   }
 
   async onLoadModel(device, url) {
-    resetGpuResourceStats();
-
     console.log('Loading', url);
 
     const gltf = await this.gltfLoader.loadFromUrl(url);
@@ -102,8 +92,6 @@ export class GltfDemo extends TinyWebGpuDemo {
   }
 
   onFrame(device, context, timestamp) {
-    resetFrameStats();
-
     const commandEncoder = device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass(this.defaultRenderPassDescriptor);
 
@@ -114,86 +102,5 @@ export class GltfDemo extends TinyWebGpuDemo {
     renderPass.end();
 
     device.queue.submit([commandEncoder.finish()]);
-  }
-}
-
-// Some simple hacks to track WebGPU resource usage.
-const TRACK_RESOURCE_USAGE = true;
-
-const gpuResourceStats = {
-  pipelineCount: 0,
-  bindGroupCount: 0,
-};
-
-const gpuFrameStats = {
-  pipelineSets: 0,
-  bindGroupSets: 0,
-  bufferSets: 0,
-  drawCount: 0,
-  instanceCount: 0,
-};
-
-function resetGpuResourceStats() {
-  gpuResourceStats.pipelineCount = 0;
-  gpuResourceStats.bindGroupCount = 0;
-}
-
-function resetFrameStats() {
-  gpuFrameStats.pipelineSets = 0;
-  gpuFrameStats.bindGroupSets = 0;
-  gpuFrameStats.bufferSets = 0;
-  gpuFrameStats.drawCount = 0;
-  gpuFrameStats.instanceCount = 0;
-}
-
-if (TRACK_RESOURCE_USAGE && 'GPUDevice' in window) {
-  const origCreateRenderPipeline = GPUDevice.prototype.createRenderPipeline;
-  GPUDevice.prototype.createRenderPipeline = function(...args) {
-    gpuResourceStats.pipelineCount++;
-    return origCreateRenderPipeline.apply(this, args);
-  }
-
-  const origCreateBindGroup = GPUDevice.prototype.createBindGroup;
-  GPUDevice.prototype.createBindGroup = function(...args) {
-    gpuResourceStats.bindGroupCount++;
-    return origCreateBindGroup.apply(this, args);
-  }
-
-  const origSetPipeline = GPURenderPassEncoder.prototype.setPipeline;
-  GPURenderPassEncoder.prototype.setPipeline = function(...args) {
-    gpuFrameStats.pipelineSets++;
-    return origSetPipeline.apply(this, args);
-  }
-
-  const origSetBindGroup = GPURenderPassEncoder.prototype.setBindGroup;
-  GPURenderPassEncoder.prototype.setBindGroup = function(...args) {
-    gpuFrameStats.bindGroupSets++;
-    return origSetBindGroup.apply(this, args);
-  }
-
-  const origSetVertexBuffer = GPURenderPassEncoder.prototype.setVertexBuffer;
-  GPURenderPassEncoder.prototype.setVertexBuffer = function(...args) {
-    gpuFrameStats.bufferSets++;
-    return origSetVertexBuffer.apply(this, args);
-  }
-
-  const origSetIndexBuffer = GPURenderPassEncoder.prototype.setIndexBuffer;
-  GPURenderPassEncoder.prototype.setIndexBuffer = function(...args) {
-    gpuFrameStats.bufferSets++;
-    return origSetIndexBuffer.apply(this, args);
-  }
-
-  const origDraw = GPURenderPassEncoder.prototype.draw;
-  GPURenderPassEncoder.prototype.draw = function(...args) {
-    gpuFrameStats.drawCount++;
-    gpuFrameStats.instanceCount += args[1] || 1;
-    return origDraw.apply(this, args);
-  }
-
-  const origDrawIndexed = GPURenderPassEncoder.prototype.drawIndexed;
-  GPURenderPassEncoder.prototype.drawIndexed = function(...args) {
-    gpuFrameStats.drawCount++;
-    gpuFrameStats.instanceCount += args[1] || 1;
-    return origDrawIndexed.apply(this, args);
   }
 }

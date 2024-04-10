@@ -200,16 +200,6 @@ export class TinyWebGpuDemo {
       }],
     });
 
-    this.statsFolder = this.pane.addFolder({
-      title: 'Stats',
-      expanded: false,
-    });
-    this.statsFolder.addMonitor(this, 'frameMs', {
-      view: 'graph',
-      min: 0,
-      max: 2
-    });
-
     await this.onInit(this.device);
   }
 
