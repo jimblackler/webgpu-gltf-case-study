@@ -543,7 +543,7 @@ export async function gltfDemo(startup_model) {
     storeOp: 'store',
   };
 
-  const frameCallback = (t) => {
+  function frameCallback(t) {
     requestAnimationFrame(frameCallback);
 
     const frameStart = performance.now();
