@@ -1,6 +1,7 @@
-import { vec3, mat4 } from 'https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/esm/index.js';
-import { TinyGltfWebGpu } from './tiny-gltf.js'
-import { QueryArgs } from './query-args.js'
+import {mat4, vec3} from 'https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/esm/index.js';
+import {TinyGltfWebGpu} from './tiny-gltf.js'
+import {QueryArgs} from './query-args.js'
+import 'https://cdn.jsdelivr.net/npm/tweakpane@3.1.0/dist/tweakpane.min.js';
 
 const GltfRootDir = './glTF-Sample-Models/2.0';
 
@@ -15,8 +16,6 @@ const GltfModels = {
   porsche_gt3_rs: `${GltfRootDir}/porsche_gt3_rs.glb`,
 };
 
-
-import 'https://cdn.jsdelivr.net/npm/tweakpane@3.1.0/dist/tweakpane.min.js';
 
 // Style for elements used by the demo.
 const injectedStyle = document.createElement('style');
@@ -45,8 +44,6 @@ export class GltfDemo {
 
   colorFormat = navigator.gpu?.getPreferredCanvasFormat?.() || 'bgra8unorm';
   depthFormat = 'depth24plus';
-  sampleCount = 4;
-
   #frameArrayBuffer = new ArrayBuffer(FRAME_BUFFER_SIZE);
   #projectionMatrix = new Float32Array(this.#frameArrayBuffer, 0, 16);
   #viewMatrix = new Float32Array(this.#frameArrayBuffer, 16 * Float32Array.BYTES_PER_ELEMENT, 16);
@@ -275,34 +272,25 @@ export class GltfDemo {
       this.msaaColorTexture.destroy();
     }
 
-    if (this.sampleCount > 1) {
-      this.msaaColorTexture = this.device.createTexture({
-        size,
-        sampleCount: this.sampleCount,
-        format: this.colorFormat,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
-      });
-    }
-
     if (this.depthTexture) {
       this.depthTexture.destroy();
     }
 
     this.depthTexture = this.device.createTexture({
       size,
-      sampleCount: this.sampleCount,
+      sampleCount: 1,
       format: this.depthFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
 
     this.colorAttachment = {
       // Appropriate target will be populated in onFrame
-      view: this.sampleCount > 1 ? this.msaaColorTexture.createView() : undefined,
+      view: undefined,
       resolveTarget: undefined,
 
       clearValue: this.clearColor,
       loadOp: 'clear',
-      storeOp: this.sampleCount > 1 ? 'discard' : 'store',
+      storeOp: 'store',
     };
 
     this.renderPassDescriptor = {
@@ -317,12 +305,7 @@ export class GltfDemo {
   }
 
   get defaultRenderPassDescriptor() {
-    const colorTexture = this.context.getCurrentTexture().createView();
-    if (this.sampleCount > 1) {
-      this.colorAttachment.resolveTarget = colorTexture;
-    } else {
-      this.colorAttachment.view = colorTexture;
-    }
+    this.colorAttachment.view = this.context.getCurrentTexture().createView();
     return this.renderPassDescriptor;
   }
 
