@@ -1,6 +1,6 @@
-import {mat4, vec3} from 'https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/esm/index.js';
+import {mat4, vec3} from '../node_modules/gl-matrix/esm/index.js';
 import {TinyGltfWebGpu} from './tiny-gltf.js'
-import {wgsl} from 'https://cdn.jsdelivr.net/npm/wgsl-preprocessor@1.0/wgsl-preprocessor.js'
+import {wgsl} from '../node_modules/wgsl-preprocessor/wgsl-preprocessor.js'
 
 const GltfRootDir = './glTF-Sample-Models/2.0';
 
