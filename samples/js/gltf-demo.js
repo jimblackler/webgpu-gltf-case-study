@@ -182,23 +182,21 @@ export async function gltfDemo(startup_model) {
       };
     }
 
-    const bindGroup = device.createBindGroup({
-      label: `glTF Material BindGroup`,
-      layout: materialBindGroupLayout,
-      entries: [{
-        binding: 0, // Material uniforms
-        resource: {buffer: materialUniformBuffer},
-      }, {
-        binding: 1, // Sampler
-        resource: baseColor.sampler,
-      }, {
-        binding: 2, // BaseColor
-        resource: baseColor.texture.createView(),
-      }],
-    });
-
     materialGpuData.set(material, {
-      bindGroup,
+      bindGroup: device.createBindGroup({
+        label: `glTF Material BindGroup`,
+        layout: materialBindGroupLayout,
+        entries: [{
+          binding: 0, // Material uniforms
+          resource: {buffer: materialUniformBuffer},
+        }, {
+          binding: 1, // Sampler
+          resource: baseColor.sampler,
+        }, {
+          binding: 2, // BaseColor
+          resource: baseColor.texture.createView(),
+        }],
+      }),
     });
   }
 
