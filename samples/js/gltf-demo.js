@@ -28,11 +28,11 @@ const ShaderLocations = {
 function createSolidColorTexture(device, r, g, b, a) {
   const data = new Uint8Array([r * 255, g * 255, b * 255, a * 255]);
   const texture = device.createTexture({
-    size: { width: 1, height: 1 },
+    size: {width: 1, height: 1},
     format: 'rgba8unorm',
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
   });
-  device.queue.writeTexture({ texture }, data, {}, { width: 1, height: 1 });
+  device.queue.writeTexture({texture}, data, {}, {width: 1, height: 1});
   return texture;
 }
 
@@ -49,7 +49,7 @@ class GltfRenderer {
       entries: [{
         binding: 0, // Node uniforms
         visibility: GPUShaderStage.VERTEX,
-        buffer: { type: 'read-only-storage' },
+        buffer: {type: 'read-only-storage'},
       }],
     });
 
@@ -121,7 +121,7 @@ class GltfRenderer {
       layout: this.instanceBindGroupLayout,
       entries: [{
         binding: 0, // Instance storage buffer
-        resource: { buffer: instanceBuffer },
+        resource: {buffer: instanceBuffer},
       }],
     });
   }
@@ -251,7 +251,7 @@ class GltfRenderer {
       layout: this.materialBindGroupLayout,
       entries: [{
         binding: 0, // Material uniforms
-        resource: { buffer: materialUniformBuffer },
+        resource: {buffer: materialUniformBuffer},
       }, {
         binding: 1, // Sampler
         resource: baseColor.sampler,
@@ -292,7 +292,7 @@ class GltfRenderer {
 
     primitiveInstances.offset += count;
 
-    return { first, count };
+    return {first, count};
   }
 
   setupPrimitive(gltf, primitive, primitiveInstances, materialGpuData) {
@@ -305,7 +305,9 @@ class GltfRenderer {
       const bufferView = gltf.bufferViews[accessor.bufferView];
 
       const shaderLocation = ShaderLocations[attribName];
-      if (shaderLocation === undefined) { continue; }
+      if (shaderLocation === undefined) {
+        continue;
+      }
 
       const offset = accessor.byteOffset;
 
@@ -573,7 +575,9 @@ export class GltfDemo {
     this.camera = new OrbitCamera(this.canvas);
 
     this.resizeObserver = new ResizeObserverHelper(this.canvas, (width, height) => {
-      if (width == 0 || height == 0) { return; }
+      if (width == 0 || height == 0) {
+        return;
+      }
 
       this.canvas.width = width;
       this.canvas.height = height;
@@ -672,7 +676,7 @@ export class GltfDemo {
           this.gltfRenderer = null;
         }
       });
-    } catch(error) {
+    } catch (error) {
       this.setError(error, 'loading glTF model');
       throw error;
     }
@@ -704,7 +708,7 @@ export class GltfDemo {
       errorElement.innerHTML = `
         <p style='font-weight: bold'>An error occured${contextString ? ' while ' + contextString : ''}:</p>
         <pre>${error?.message ? error.message : error}</pre>`;
-        this.canvas.parentElement.appendChild(errorElement);
+      this.canvas.parentElement.appendChild(errorElement);
     }
   }
 
@@ -718,7 +722,9 @@ export class GltfDemo {
   get frameMs() {
     let avg = 0;
     for (const value of this.#frameMs) {
-      if (value === undefined) { return 0; } // Don't have enough sampled yet
+      if (value === undefined) {
+        return 0;
+      } // Don't have enough sampled yet
       avg += value;
     }
     return avg / this.#frameMs.length;
@@ -752,7 +758,7 @@ export class GltfDemo {
       layout: this.frameBindGroupLayout,
       entries: [{
         binding: 0, // Camera uniforms
-        resource: { buffer: this.frameUniformBuffer },
+        resource: {buffer: this.frameUniformBuffer},
       }],
     });
 
@@ -812,7 +818,9 @@ class ResizeObserverHelper extends ResizeObserver {
   constructor(element, callback) {
     super(entries => {
       for (let entry of entries) {
-        if (entry.target != element) { continue; }
+        if (entry.target != element) {
+          continue;
+        }
 
         if (entry.devicePixelContentBoxSize) {
           // Should give exact pixel dimensions, but only works on Chrome.
@@ -874,16 +882,16 @@ export class OrbitCamera {
     const moveCallback = (event) => {
       let xDelta, yDelta;
 
-      if(document.pointerLockEnabled) {
-          xDelta = event.movementX;
-          yDelta = event.movementY;
-          this.orbit(xDelta * 0.025, yDelta * 0.025);
+      if (document.pointerLockEnabled) {
+        xDelta = event.movementX;
+        yDelta = event.movementY;
+        this.orbit(xDelta * 0.025, yDelta * 0.025);
       } else if (moving) {
-          xDelta = event.pageX - lastX;
-          yDelta = event.pageY - lastY;
-          lastX = event.pageX;
-          lastY = event.pageY;
-          this.orbit(xDelta * 0.025, yDelta * 0.025);
+        xDelta = event.pageX - lastX;
+        yDelta = event.pageY - lastY;
+        lastX = event.pageX;
+        lastY = event.pageY;
+        this.orbit(xDelta * 0.025, yDelta * 0.025);
       }
     };
     const upCallback = (event) => {
@@ -926,29 +934,29 @@ export class OrbitCamera {
   }
 
   orbit(xDelta, yDelta) {
-    if(xDelta || yDelta) {
+    if (xDelta || yDelta) {
       this.orbitY += xDelta;
-      if(this.constrainYOrbit) {
-          this.orbitY = Math.min(Math.max(this.orbitY, this.minOrbitY), this.maxOrbitY);
+      if (this.constrainYOrbit) {
+        this.orbitY = Math.min(Math.max(this.orbitY, this.minOrbitY), this.maxOrbitY);
       } else {
-          while (this.orbitY < -Math.PI) {
-              this.orbitY += Math.PI * 2;
-          }
-          while (this.orbitY >= Math.PI) {
-              this.orbitY -= Math.PI * 2;
-          }
+        while (this.orbitY < -Math.PI) {
+          this.orbitY += Math.PI * 2;
+        }
+        while (this.orbitY >= Math.PI) {
+          this.orbitY -= Math.PI * 2;
+        }
       }
 
       this.orbitX += yDelta;
-      if(this.constrainXOrbit) {
-          this.orbitX = Math.min(Math.max(this.orbitX, this.minOrbitX), this.maxOrbitX);
+      if (this.constrainXOrbit) {
+        this.orbitX = Math.min(Math.max(this.orbitX, this.minOrbitX), this.maxOrbitX);
       } else {
-          while (this.orbitX < -Math.PI) {
-              this.orbitX += Math.PI * 2;
-          }
-          while (this.orbitX >= Math.PI) {
-              this.orbitX -= Math.PI * 2;
-          }
+        while (this.orbitX < -Math.PI) {
+          this.orbitX += Math.PI * 2;
+        }
+        while (this.orbitX >= Math.PI) {
+          this.orbitX -= Math.PI * 2;
+        }
       }
 
       this.#dirty = true;
@@ -972,7 +980,7 @@ export class OrbitCamera {
 
   set distance(value) {
     this.#distance[2] = value;
-    if(this.constrainDistance) {
+    if (this.constrainDistance) {
       this.#distance[2] = Math.min(Math.max(this.#distance[2], this.minDistance), this.maxDistance);
     }
     this.#dirty = true;
