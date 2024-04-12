@@ -533,13 +533,6 @@ export async function gltfDemo(startup_model) {
   }
 
   const size = {width: canvas.width, height: canvas.height};
-  const depthTexture = device.createTexture({
-    size,
-    sampleCount: 1,
-    format: depthFormat,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT,
-  });
-
   const colorAttachment = {
     // Appropriate target will be populated in onFrame
     view: undefined,
@@ -548,16 +541,6 @@ export async function gltfDemo(startup_model) {
     clearValue: clearColor,
     loadOp: 'clear',
     storeOp: 'store',
-  };
-
-  const renderPassDescriptor = {
-    colorAttachments: [colorAttachment],
-    depthStencilAttachment: {
-      view: depthTexture.createView(),
-      depthClearValue: 1.0,
-      depthLoadOp: 'clear',
-      depthStoreOp: 'discard',
-    }
   };
 
   const frameCallback = (t) => {
@@ -575,7 +558,20 @@ export async function gltfDemo(startup_model) {
     updateProjection(); // right place??
     const commandEncoder = device.createCommandEncoder();
     colorAttachment.view = context.getCurrentTexture().createView();
-    const renderPass = commandEncoder.beginRenderPass(renderPassDescriptor);
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [colorAttachment],
+      depthStencilAttachment: {
+        view: device.createTexture({
+          size,
+          sampleCount: 1,
+          format: depthFormat,
+          usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        }).createView(),
+        depthClearValue: 1.0,
+        depthLoadOp: 'clear',
+        depthStoreOp: 'discard',
+      }
+    });
 
     renderPass.setBindGroup(0, frameBindGroup);
     renderPass.setBindGroup(1, instanceBindGroup);
