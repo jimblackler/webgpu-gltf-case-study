@@ -449,22 +449,6 @@ export async function gltfDemo(startup_model) {
       return pipeline;
     }
 
-    // Define the alpha blending behavior.
-    let blend = undefined;
-    if (args.alphaMode == 'BLEND') {
-      blend = {
-        color: {
-          srcFactor: 'src-alpha',
-          dstFactor: 'one-minus-src-alpha',
-        },
-        alpha: {
-          // This just prevents the canvas from having alpha "holes" in it.
-          srcFactor: 'one',
-          dstFactor: 'one',
-        }
-      }
-    }
-
     const module = getShaderModule(args.shaderArgs);
 
     const gpuPipeline = {
@@ -502,7 +486,17 @@ export async function gltfDemo(startup_model) {
           targets: [{
             format: colorFormat,
             // Apply the necessary blending
-            blend,
+            blend: args.alphaMode === 'BLEND' ? {
+              color: {
+                srcFactor: 'src-alpha',
+                dstFactor: 'one-minus-src-alpha',
+              },
+              alpha: {
+                // This just prevents the canvas from having alpha "holes" in it.
+                srcFactor: 'one',
+                dstFactor: 'one',
+              }
+            } : undefined
           }],
         },
       }),
