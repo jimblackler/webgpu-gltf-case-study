@@ -419,8 +419,17 @@ export async function gltfDemo(startup_model) {
     const gpuMaterial = materialGpuData.get(material);
 
     // Start passing the material when generating pipeline args.
-    const pipelineArgs = getPipelineArgs(primitive, sortedBufferLayout, material);
-    const pipeline = getPipelineForPrimitive(pipelineArgs);
+    const pipeline = getPipelineForPrimitive({
+      topology: TinyGltfWebGpu.gpuPrimitiveTopologyForMode(primitive.mode),
+      buffers: sortedBufferLayout,
+      doubleSided: material.doubleSided,
+      alphaMode: material.alphaMode,
+      // These values specifically will be passed to shader module creation.
+      shaderArgs: {
+        hasTexcoord: 'TEXCOORD_0' in primitive.attributes,
+        useAlphaCutoff: material.alphaMode == 'MASK',
+      },
+    });
 
     // Rather than just storing a list of primitives for each pipeline store a map of
     // materials which use the pipeline to the primitives that use the material.
@@ -432,20 +441,6 @@ export async function gltfDemo(startup_model) {
 
     // Add the primitive to the list of primitives for this material.
     materialPrimitives.push(gpuPrimitive);
-  }
-
-  function getPipelineArgs(primitive, buffers, material) {
-    return {
-      topology: TinyGltfWebGpu.gpuPrimitiveTopologyForMode(primitive.mode),
-      buffers,
-      doubleSided: material.doubleSided,
-      alphaMode: material.alphaMode,
-      // These values specifically will be passed to shader module creation.
-      shaderArgs: {
-        hasTexcoord: 'TEXCOORD_0' in primitive.attributes,
-        useAlphaCutoff: material.alphaMode == 'MASK',
-      },
-    };
   }
 
   function getPipelineForPrimitive(args) {
