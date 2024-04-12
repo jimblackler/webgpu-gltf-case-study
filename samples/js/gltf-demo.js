@@ -151,8 +151,6 @@ export async function gltfDemo(startup_model) {
     }
   }
 
-  const opaqueWhiteTexture = createSolidColorTexture(device, 1, 1, 1, 1);
-
   const materialGpuData = new Map();
   for (const material of gltf.materials) {
     // Create a uniform buffer for this material and populate it with the material properties.
@@ -172,7 +170,7 @@ export async function gltfDemo(startup_model) {
     let baseColor = gltf.gpuTextures[material.pbrMetallicRoughness?.baseColorTexture?.index];
     if (!baseColor) {
       baseColor = {
-        texture: opaqueWhiteTexture,
+        texture: createSolidColorTexture(device, 1, 1, 1, 1),
         sampler: gltf.gpuDefaultSampler,
       };
     }
