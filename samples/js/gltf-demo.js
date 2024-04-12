@@ -420,7 +420,7 @@ export async function gltfDemo(startup_model) {
   function getPipelineForPrimitive(args) {
     const key = JSON.stringify(args);
 
-    let pipeline = pipelineGpuData.get(key);
+    const pipeline = pipelineGpuData.get(key);
     if (pipeline) {
       return pipeline;
     }
