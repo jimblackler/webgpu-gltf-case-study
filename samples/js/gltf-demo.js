@@ -2,7 +2,6 @@ import {mat4, vec3} from 'https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/esm/index
 import {TinyGltfWebGpu} from './tiny-gltf.js'
 import {QueryArgs} from './query-args.js'
 import {wgsl} from 'https://cdn.jsdelivr.net/npm/wgsl-preprocessor@1.0/wgsl-preprocessor.js'
-import 'https://cdn.jsdelivr.net/npm/tweakpane@3.1.0/dist/tweakpane.min.js';
 
 const GltfRootDir = './glTF-Sample-Models/2.0';
 
@@ -562,16 +561,6 @@ export class GltfDemo {
     }
     this.context = this.canvas.getContext('webgpu');
 
-    this.pane = new Tweakpane.Pane({
-      title: document.title.split('|')[0],
-    });
-
-    const viewSrcBtn = this.pane.addButton({title: 'View Source'});
-    viewSrcBtn.on('click', () => {
-      let srcUrl = sourceOrigin + window.location.pathname.replace(sourceRepo, sourceRepo + '/blob/main');
-      window.open(srcUrl, '_blank');
-    });
-
     this.camera = new OrbitCamera(this.canvas);
 
     this.resizeObserver = new ResizeObserverHelper(this.canvas, (width, height) => {
@@ -629,14 +618,6 @@ export class GltfDemo {
 
     this.rendererClass = rendererClass;
 
-    this.pane.addBlade({
-      label: 'model',
-      view: 'list',
-      options: GltfModels,
-      value: this.model,
-    }).on('change', (ev) => {
-      this.onLoadModel(this.device, ev.value);
-    });
   }
 
   onInit(device) {
