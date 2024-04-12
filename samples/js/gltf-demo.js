@@ -495,6 +495,18 @@ export async function gltfDemo(startup_model) {
     storeOp: 'store',
   };
 
+  const depthStencilAttachment = {
+    view: device.createTexture({
+      size,
+      sampleCount: 1,
+      format: depthFormat,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    }).createView(),
+    depthClearValue: 1.0,
+    depthLoadOp: 'clear',
+    depthStoreOp: 'discard',
+  };
+
   function frameCallback(t) {
     requestAnimationFrame(frameCallback);
 
@@ -515,17 +527,7 @@ export async function gltfDemo(startup_model) {
     colorAttachment.view = context.getCurrentTexture().createView();
     const renderPass = commandEncoder.beginRenderPass({
       colorAttachments: [colorAttachment],
-      depthStencilAttachment: {
-        view: device.createTexture({
-          size,
-          sampleCount: 1,
-          format: depthFormat,
-          usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        }).createView(),
-        depthClearValue: 1.0,
-        depthLoadOp: 'clear',
-        depthStoreOp: 'discard',
-      }
+      depthStencilAttachment: depthStencilAttachment
     });
 
     renderPass.setBindGroup(0, frameBindGroup);
