@@ -206,7 +206,122 @@ export async function gltfDemo(startup_model) {
 
   for (const mesh of gltf.meshes) {
     for (const primitive of mesh.primitives) {
-      setupPrimitive(gltf, primitive, primitiveInstances, materialGpuData);
+      const bufferLayout = new Map();
+      const gpuBuffers = new Map();
+      let drawCount = 0;
+
+      for (const [attribName, accessorIndex] of Object.entries(primitive.attributes)) {
+        const accessor = gltf.accessors[accessorIndex];
+        const bufferView = gltf.bufferViews[accessor.bufferView];
+
+        const shaderLocation = ShaderLocations[attribName];
+        if (shaderLocation === undefined) {
+          continue;
+        }
+
+        const offset = accessor.byteOffset;
+
+        let buffer = bufferLayout.get(accessor.bufferView);
+        let gpuBuffer;
+
+        let separate = buffer && (Math.abs(offset - buffer.attributes[0].offset) >= buffer.arrayStride);
+        if (!buffer || separate) {
+          buffer = {
+            arrayStride: bufferView.byteStride || TinyGltfWebGpu.packedArrayStrideForAccessor(accessor),
+            attributes: [],
+          };
+
+          bufferLayout.set(separate ? attribName : accessor.bufferView, buffer);
+          gpuBuffers.set(buffer, {
+            buffer: gltf.gpuBuffers[accessor.bufferView],
+            offset
+          });
+        } else {
+          gpuBuffer = gpuBuffers.get(buffer);
+          gpuBuffer.offset = Math.min(gpuBuffer.offset, offset);
+        }
+
+        buffer.attributes.push({
+          shaderLocation,
+          format: TinyGltfWebGpu.gpuFormatForAccessor(accessor),
+          offset,
+        });
+
+        drawCount = accessor.count;
+      }
+
+      for (const buffer of bufferLayout.values()) {
+        const gpuBuffer = gpuBuffers.get(buffer);
+        for (const attribute of buffer.attributes) {
+          attribute.offset -= gpuBuffer.offset;
+        }
+        // Sort the attributes by shader location.
+        buffer.attributes = buffer.attributes.sort((a, b) => {
+          return a.shaderLocation - b.shaderLocation;
+        });
+      }
+      // Sort the buffers by their first attribute's shader location.
+      const sortedBufferLayout = [...bufferLayout.values()].sort((a, b) => {
+        return a.attributes[0].shaderLocation - b.attributes[0].shaderLocation;
+      });
+
+      // Ensure that the gpuBuffers are saved in the same order as the buffer layout.
+      const sortedGpuBuffers = [];
+      for (const buffer of sortedBufferLayout) {
+        sortedGpuBuffers.push(gpuBuffers.get(buffer));
+      }
+
+      const instances = primitiveInstances.matrices.get(primitive);
+
+      const first = primitiveInstances.offset;
+      const count = instances.length;
+
+      for (let i = 0; i < count; ++i) {
+        primitiveInstances.arrayBuffer.set(instances[i].worldMatrix, (first + i) * 32);
+        primitiveInstances.arrayBuffer.set(instances[i].normalMatrix, (first + i) * 32 + 16);
+      }
+
+      primitiveInstances.offset += count;
+      const gpuPrimitive = {
+        buffers: sortedGpuBuffers,
+        drawCount,
+        instances: primitiveInstances
+      };
+
+      if ('indices' in primitive) {
+        const accessor = gltf.accessors[primitive.indices];
+        gpuPrimitive.indexBuffer = gltf.gpuBuffers[accessor.bufferView];
+        gpuPrimitive.indexOffset = accessor.byteOffset;
+        gpuPrimitive.indexType = TinyGltfWebGpu.gpuIndexFormatForComponentType(accessor.componentType);
+        gpuPrimitive.drawCount = accessor.count;
+      }
+
+      const material = gltf.materials[primitive.material];
+      const gpuMaterial = materialGpuData.get(material);
+
+      // Start passing the material when generating pipeline args.
+      const pipeline = getPipelineForPrimitive({
+        topology: TinyGltfWebGpu.gpuPrimitiveTopologyForMode(primitive.mode),
+        buffers: sortedBufferLayout,
+        doubleSided: material.doubleSided,
+        alphaMode: material.alphaMode,
+        // These values specifically will be passed to shader module creation.
+        shaderArgs: {
+          hasTexcoord: 'TEXCOORD_0' in primitive.attributes,
+          useAlphaCutoff: material.alphaMode == 'MASK',
+        },
+      });
+
+      // Rather than just storing a list of primitives for each pipeline store a map of
+      // materials which use the pipeline to the primitives that use the material.
+      let materialPrimitives = pipeline.materialPrimitives.get(gpuMaterial);
+      if (!materialPrimitives) {
+        materialPrimitives = [];
+        pipeline.materialPrimitives.set(gpuMaterial, materialPrimitives);
+      }
+
+      // Add the primitive to the list of primitives for this material.
+      materialPrimitives.push(gpuPrimitive);
     }
   }
 
@@ -318,125 +433,6 @@ export async function gltfDemo(startup_model) {
     return shaderModule;
   }
 
-
-  function setupPrimitive(gltf, primitive, primitiveInstances, materialGpuData) {
-    const bufferLayout = new Map();
-    const gpuBuffers = new Map();
-    let drawCount = 0;
-
-    for (const [attribName, accessorIndex] of Object.entries(primitive.attributes)) {
-      const accessor = gltf.accessors[accessorIndex];
-      const bufferView = gltf.bufferViews[accessor.bufferView];
-
-      const shaderLocation = ShaderLocations[attribName];
-      if (shaderLocation === undefined) {
-        continue;
-      }
-
-      const offset = accessor.byteOffset;
-
-      let buffer = bufferLayout.get(accessor.bufferView);
-      let gpuBuffer;
-
-      let separate = buffer && (Math.abs(offset - buffer.attributes[0].offset) >= buffer.arrayStride);
-      if (!buffer || separate) {
-        buffer = {
-          arrayStride: bufferView.byteStride || TinyGltfWebGpu.packedArrayStrideForAccessor(accessor),
-          attributes: [],
-        };
-
-        bufferLayout.set(separate ? attribName : accessor.bufferView, buffer);
-        gpuBuffers.set(buffer, {
-          buffer: gltf.gpuBuffers[accessor.bufferView],
-          offset
-        });
-      } else {
-        gpuBuffer = gpuBuffers.get(buffer);
-        gpuBuffer.offset = Math.min(gpuBuffer.offset, offset);
-      }
-
-      buffer.attributes.push({
-        shaderLocation,
-        format: TinyGltfWebGpu.gpuFormatForAccessor(accessor),
-        offset,
-      });
-
-      drawCount = accessor.count;
-    }
-
-    for (const buffer of bufferLayout.values()) {
-      const gpuBuffer = gpuBuffers.get(buffer);
-      for (const attribute of buffer.attributes) {
-        attribute.offset -= gpuBuffer.offset;
-      }
-      // Sort the attributes by shader location.
-      buffer.attributes = buffer.attributes.sort((a, b) => {
-        return a.shaderLocation - b.shaderLocation;
-      });
-    }
-    // Sort the buffers by their first attribute's shader location.
-    const sortedBufferLayout = [...bufferLayout.values()].sort((a, b) => {
-      return a.attributes[0].shaderLocation - b.attributes[0].shaderLocation;
-    });
-
-    // Ensure that the gpuBuffers are saved in the same order as the buffer layout.
-    const sortedGpuBuffers = [];
-    for (const buffer of sortedBufferLayout) {
-      sortedGpuBuffers.push(gpuBuffers.get(buffer));
-    }
-
-    const instances = primitiveInstances.matrices.get(primitive);
-
-    const first = primitiveInstances.offset;
-    const count = instances.length;
-
-    for (let i = 0; i < count; ++i) {
-      primitiveInstances.arrayBuffer.set(instances[i].worldMatrix, (first + i) * 32);
-      primitiveInstances.arrayBuffer.set(instances[i].normalMatrix, (first + i) * 32 + 16);
-    }
-
-    primitiveInstances.offset += count;
-    const gpuPrimitive = {
-      buffers: sortedGpuBuffers,
-      drawCount,
-      instances: primitiveInstances
-    };
-
-    if ('indices' in primitive) {
-      const accessor = gltf.accessors[primitive.indices];
-      gpuPrimitive.indexBuffer = gltf.gpuBuffers[accessor.bufferView];
-      gpuPrimitive.indexOffset = accessor.byteOffset;
-      gpuPrimitive.indexType = TinyGltfWebGpu.gpuIndexFormatForComponentType(accessor.componentType);
-      gpuPrimitive.drawCount = accessor.count;
-    }
-
-    const material = gltf.materials[primitive.material];
-    const gpuMaterial = materialGpuData.get(material);
-
-    // Start passing the material when generating pipeline args.
-    const pipeline = getPipelineForPrimitive({
-      topology: TinyGltfWebGpu.gpuPrimitiveTopologyForMode(primitive.mode),
-      buffers: sortedBufferLayout,
-      doubleSided: material.doubleSided,
-      alphaMode: material.alphaMode,
-      // These values specifically will be passed to shader module creation.
-      shaderArgs: {
-        hasTexcoord: 'TEXCOORD_0' in primitive.attributes,
-        useAlphaCutoff: material.alphaMode == 'MASK',
-      },
-    });
-
-    // Rather than just storing a list of primitives for each pipeline store a map of
-    // materials which use the pipeline to the primitives that use the material.
-    let materialPrimitives = pipeline.materialPrimitives.get(gpuMaterial);
-    if (!materialPrimitives) {
-      materialPrimitives = [];
-      pipeline.materialPrimitives.set(gpuMaterial, materialPrimitives);
-    }
-
-    // Add the primitive to the list of primitives for this material.
-    materialPrimitives.push(gpuPrimitive);
-  }
 
   function getPipelineForPrimitive(args) {
     const key = JSON.stringify(args);
