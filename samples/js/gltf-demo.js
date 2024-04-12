@@ -524,9 +524,6 @@ injectedStyle.innerText = `
   }`;
 document.head.appendChild(injectedStyle);
 
-const sourceOrigin = 'https://github.com/toji';
-const sourceRepo = 'webgpu-gltf-case-study';
-
 const FRAME_BUFFER_SIZE = Float32Array.BYTES_PER_ELEMENT * 36;
 
 export class GltfDemo {
