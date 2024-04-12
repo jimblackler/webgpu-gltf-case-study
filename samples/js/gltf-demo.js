@@ -93,8 +93,7 @@ export async function gltfDemo(startup_model) {
     }],
   });
 
-  const gltfLoader = new TinyGltfWebGpu(device);
-  const gltf = await gltfLoader.loadFromUrl(GltfModels[startup_model]);
+  const gltf = await new TinyGltfWebGpu(device).loadFromUrl(GltfModels[startup_model]);
   const sceneAabb = gltf.scenes[gltf.scene].aabb;
 
   camera.target = sceneAabb.center;
