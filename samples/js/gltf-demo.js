@@ -105,8 +105,6 @@ export async function gltfDemo(startup_model) {
 
   zFar = sceneAabb.radius * 4.0;
 
-  console.log(gltf);
-
   const pipelineGpuData = new Map();
   const shaderModules = new Map();
 
@@ -134,15 +132,6 @@ export async function gltfDemo(startup_model) {
       visibility: GPUShaderStage.FRAGMENT,
       texture: {},
     }], // Omitting additional material properties for simplicity
-  });
-
-  const gltfPipelineLayout = device.createPipelineLayout({
-    label: 'glTF Pipeline Layout',
-    bindGroupLayouts: [
-      frameBindGroupLayout,
-      instanceBindGroupLayout,
-      materialBindGroupLayout,
-    ]
   });
 
   const primitiveInstances = {
@@ -488,7 +477,14 @@ export async function gltfDemo(startup_model) {
     const module = getShaderModule(args.shaderArgs);
     pipeline = device.createRenderPipeline({
       label: 'glTF renderer pipeline',
-      layout: gltfPipelineLayout,
+      layout: device.createPipelineLayout({
+        label: 'glTF Pipeline Layout',
+        bindGroupLayouts: [
+          frameBindGroupLayout,
+          instanceBindGroupLayout,
+          materialBindGroupLayout,
+        ]
+      }),
       vertex: {
         module,
         entryPoint: 'vertexMain',
