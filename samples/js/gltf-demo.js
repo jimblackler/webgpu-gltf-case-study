@@ -37,8 +37,6 @@ function createSolidColorTexture(device, r, g, b, a) {
 }
 
 class GltfRenderer {
-  static loadImageSlots = ['baseColorTexture'];
-
   pipelineGpuData = new Map();
   shaderModules = new Map();
 
