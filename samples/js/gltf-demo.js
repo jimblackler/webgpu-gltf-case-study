@@ -538,7 +538,10 @@ export async function gltfDemo(startup_model) {
 
     device.queue.writeBuffer(frameUniformBuffer, 0, frameArrayBuffer);
 
-    updateProjection(); // right place??
+    const aspect = canvas.width / canvas.height;
+    // Using mat4.perspectiveZO instead of mat4.perpective because WebGPU's
+    // normalized device coordinates Z range is [0, 1], instead of WebGL's [-1, 1]
+    mat4.perspectiveZO(projectionMatrix, fov, aspect, zNear, zFar); // right place??
     const commandEncoder = device.createCommandEncoder();
     colorAttachment.view = context.getCurrentTexture().createView();
     const renderPass = commandEncoder.beginRenderPass({
@@ -592,16 +595,10 @@ export async function gltfDemo(startup_model) {
     device.queue.submit([commandEncoder.finish()]);
 
     frameMs[frameMsIndex++ % frameMs.length] = performance.now() - frameStart;
-  };
+  }
   // Start the render loop.
   requestAnimationFrame(frameCallback);
 
-  function updateProjection() {
-    const aspect = canvas.width / canvas.height;
-    // Using mat4.perspectiveZO instead of mat4.perpective because WebGPU's
-    // normalized device coordinates Z range is [0, 1], instead of WebGL's [-1, 1]
-    mat4.perspectiveZO(projectionMatrix, fov, aspect, zNear, zFar);
-  }
 }
 
 export class OrbitCamera {
