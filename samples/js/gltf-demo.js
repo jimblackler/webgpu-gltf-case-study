@@ -466,47 +466,46 @@ export async function gltfDemo(startup_model) {
     }
 
     const module = getShaderModule(args.shaderArgs);
-    pipeline = device.createRenderPipeline({
-      label: 'glTF renderer pipeline',
-      layout: device.createPipelineLayout({
-        label: 'glTF Pipeline Layout',
-        bindGroupLayouts: [
-          frameBindGroupLayout,
-          instanceBindGroupLayout,
-          materialBindGroupLayout,
-        ]
-      }),
-      vertex: {
-        module,
-        entryPoint: 'vertexMain',
-        buffers: args.buffers,
-      },
-      primitive: {
-        topology: args.topology,
-        // Make sure to apply the appropriate culling mode
-        cullMode: args.doubleSided ? 'none' : 'back',
-      },
-      multisample: {
-        count: 1,
-      },
-      depthStencil: {
-        format: depthFormat,
-        depthWriteEnabled: true,
-        depthCompare: 'less',
-      },
-      fragment: {
-        module,
-        entryPoint: 'fragmentMain',
-        targets: [{
-          format: colorFormat,
-          // Apply the necessary blending
-          blend,
-        }],
-      },
-    });
 
     const gpuPipeline = {
-      pipeline,
+      pipeline: device.createRenderPipeline({
+        label: 'glTF renderer pipeline',
+        layout: device.createPipelineLayout({
+          label: 'glTF Pipeline Layout',
+          bindGroupLayouts: [
+            frameBindGroupLayout,
+            instanceBindGroupLayout,
+            materialBindGroupLayout,
+          ]
+        }),
+        vertex: {
+          module,
+          entryPoint: 'vertexMain',
+          buffers: args.buffers,
+        },
+        primitive: {
+          topology: args.topology,
+          // Make sure to apply the appropriate culling mode
+          cullMode: args.doubleSided ? 'none' : 'back',
+        },
+        multisample: {
+          count: 1,
+        },
+        depthStencil: {
+          format: depthFormat,
+          depthWriteEnabled: true,
+          depthCompare: 'less',
+        },
+        fragment: {
+          module,
+          entryPoint: 'fragmentMain',
+          targets: [{
+            format: colorFormat,
+            // Apply the necessary blending
+            blend,
+          }],
+        },
+      }),
       // Cache a map of materials to the primitives that used them for each pipeline.
       materialPrimitives: new Map(),
     };
