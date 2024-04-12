@@ -52,9 +52,6 @@ export async function gltfDemo(startup_model) {
   const zNear = 0.01;
   let zFar = 128;
 
-  const frameMs = new Array(20);
-  let frameMsIndex = 0;
-
   const canvas = document.querySelector('.webgpu-canvas');
 
   const context = canvas.getContext('webgpu');
@@ -586,8 +583,6 @@ export async function gltfDemo(startup_model) {
     renderPass.end();
 
     device.queue.submit([commandEncoder.finish()]);
-
-    frameMs[frameMsIndex++ % frameMs.length] = performance.now() - frameStart;
   }
   // Start the render loop.
   requestAnimationFrame(frameCallback);
