@@ -107,17 +107,15 @@ export async function gltfDemo(startup_model) {
     offset: 0,
   };
 
-  gltf.nodes.filter(node => 'mesh' in node).forEach(node => {
-    for (const primitive of gltf.meshes[node.mesh].primitives) {
-      const instances = primitiveInstances.matrices.get(primitive);
-      if (instances) {
-        instances.push(node);
-      } else {
-        primitiveInstances.matrices.set(primitive, [node]);
-      }
-      primitiveInstances.total++;
+  gltf.nodes.forEach(node => gltf.meshes[node.mesh]?.primitives.forEach(primitive => {
+    const instances = primitiveInstances.matrices.get(primitive);
+    if (instances) {
+      instances.push(node);
+    } else {
+      primitiveInstances.matrices.set(primitive, [node]);
     }
-  });
+    primitiveInstances.total++;
+  }))
 
   const materialGpuData = new Map();
   for (const material of gltf.materials) {
