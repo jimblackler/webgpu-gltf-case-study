@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@webgpu/types": "^0.1.40",
     "gl-matrix": "^3.4.3",
     "wgsl-preprocessor": "^1.0.1"
   }
