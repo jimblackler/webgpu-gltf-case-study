@@ -33,8 +33,6 @@ export async function gltfDemo(startup_model) {
   const frameArrayBuffer = new ArrayBuffer(FRAME_BUFFER_SIZE);
   const projectionMatrix = new Float32Array(frameArrayBuffer, 0, 16);
   const viewMatrix = new Float32Array(frameArrayBuffer, 16 * Float32Array.BYTES_PER_ELEMENT, 16);
-  const timeArray = new Float32Array(frameArrayBuffer, 35 * Float32Array.BYTES_PER_ELEMENT, 1);
-
   const fov = Math.PI * 0.5;
   const zNear = 0.01;
   let zFar = 128;
@@ -77,8 +75,8 @@ export async function gltfDemo(startup_model) {
   const gltf = await new TinyGltfWebGpu(device).loadFromUrl(GltfModels[startup_model]);
   const sceneAabb = gltf.scenes[gltf.scene].aabb;
 
-  const camera = new OrbitCamera(canvas, sceneAabb.center, sceneAabb.radius * 2.0,
-      sceneAabb.radius, sceneAabb.radius * 1.5);
+  orbitCamera(canvas, sceneAabb.center, sceneAabb.radius * 2.0,
+      sceneAabb.radius, sceneAabb.radius * 1.5, mtx => viewMatrix.set(mtx));
 
   zFar = sceneAabb.radius * 4.0;
 
@@ -501,12 +499,8 @@ export async function gltfDemo(startup_model) {
     depthStoreOp: 'discard',
   };
 
-  function frameCallback(t) {
+  function frameCallback() {
     requestAnimationFrame(frameCallback);
-
-    // Update the frame uniforms
-    viewMatrix.set(camera.viewMatrix);
-    timeArray[0] = t;
 
     device.queue.writeBuffer(frameUniformBuffer, 0, frameArrayBuffer);
 
@@ -561,65 +555,64 @@ export async function gltfDemo(startup_model) {
   requestAnimationFrame(frameCallback);
 }
 
-export class OrbitCamera {
-  #orbitX = 0;
-  #orbitY = 0;
-  #distance = vec3.create();
-  #target;
-  #maxDistance
-  #minDistance
+function orbitCamera(element, target, maxDistance, minDistance, distanceValue, callback) {
+  let orbitX = 0;
+  let orbitY = 0;
 
-  constructor(element, target, maxDistance, minDistance, distance) {
-    this.#target = vec3.clone(target)
-    this.#maxDistance = maxDistance
-    this.#minDistance = minDistance
-    this.#distance[2] = Math.min(Math.max(distance, this.#minDistance), this.#maxDistance);
+  const distance = vec3.fromValues(0, 0, distanceValue);
 
-    let moving = false;
-
-    element.addEventListener('pointerdown', event => {
-      if (event.isPrimary) {
-        moving = true;
-      }
-    });
-    element.addEventListener('pointermove', event => {
-      let xDelta, yDelta;
-
-      if (document.pointerLockEnabled || moving) {
-        xDelta = event.movementX;
-        yDelta = event.movementY;
-      }
-      if (xDelta || yDelta) {
-        this.#orbitY += xDelta * 0.025;
-        while (this.#orbitY < -Math.PI) {
-          this.#orbitY += Math.PI * 2;
-        }
-        while (this.#orbitY >= Math.PI) {
-          this.#orbitY -= Math.PI * 2;
-        }
-
-        this.#orbitX = Math.min(Math.max(this.#orbitX + yDelta * 0.025, -Math.PI * 0.5), Math.PI * 0.5);
-      }
-    });
-    element.addEventListener('pointerup', event => {
-      if (event.isPrimary) {
-        moving = false;
-      }
-    });
-    element.addEventListener('mousewheel', (event) => {
-      this.#distance[2] = Math.min(Math.max(this.#distance[2] - event.wheelDeltaY * 0.005,
-          this.#minDistance), this.#maxDistance);
-      event.preventDefault();
-    });
-  }
-
-  get viewMatrix() {
+  function broadcast() {
     const mv = mat4.create();
-    mat4.translate(mv, mv, this.#target);
-    mat4.rotateY(mv, mv, -this.#orbitY);
-    mat4.rotateX(mv, mv, -this.#orbitX);
-    mat4.translate(mv, mv, this.#distance);
+    mat4.translate(mv, mv, target);
+    mat4.rotateY(mv, mv, -orbitY);
+    mat4.rotateX(mv, mv, -orbitX);
+    mat4.translate(mv, mv, distance);
     mat4.invert(mv, mv);
-    return mv;
+    callback(mv)
   }
+
+  broadcast();
+
+  let moving = false;
+
+  element.addEventListener('pointerdown', event => {
+    if (event.isPrimary) {
+      moving = true;
+    }
+  });
+  element.addEventListener('pointermove', event => {
+    let xDelta, yDelta;
+
+    if (document.pointerLockEnabled || moving) {
+      xDelta = event.movementX;
+      yDelta = event.movementY;
+    }
+    if (xDelta || yDelta) {
+      orbitY += xDelta * 0.025;
+      while (orbitY < -Math.PI) {
+        orbitY += Math.PI * 2;
+      }
+      while (orbitY >= Math.PI) {
+        orbitY -= Math.PI * 2;
+      }
+
+      orbitX = Math.min(Math.max(orbitX + yDelta * 0.025, -Math.PI * 0.5), Math.PI * 0.5);
+      broadcast();
+    }
+  });
+  element.addEventListener('pointerup', event => {
+    if (event.isPrimary) {
+      moving = false;
+    }
+  });
+  element.addEventListener('mousewheel', event => {
+    const wheelDeltaY = event.wheelDeltaY;
+    if (wheelDeltaY) {
+      distance[2] =
+          Math.min(Math.max(distance[2] - wheelDeltaY * 0.005, minDistance), maxDistance);
+      broadcast();
+    }
+    event.preventDefault();
+  });
+
 }
