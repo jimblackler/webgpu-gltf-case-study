@@ -26,8 +26,6 @@ const ShaderLocations = {
 const FRAME_BUFFER_SIZE = Float32Array.BYTES_PER_ELEMENT * 36;
 
 export async function gltfDemo(startup_model) {
-  const clearColor = {r: 0.0, g: 0.0, b: 0.2, a: 1.0};
-
   const colorFormat = navigator.gpu?.getPreferredCanvasFormat?.() || 'bgra8unorm';
   const depthFormat = 'depth24plus';
   const frameArrayBuffer = new ArrayBuffer(FRAME_BUFFER_SIZE);
@@ -477,7 +475,7 @@ export async function gltfDemo(startup_model) {
     view: undefined,
     resolveTarget: undefined,
 
-    clearValue: clearColor,
+    clearValue: {r: 0.0, g: 0.0, b: 0.2, a: 1.0},
     loadOp: 'clear',
     storeOp: 'store',
   };
