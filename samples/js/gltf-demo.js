@@ -576,27 +576,18 @@ export class OrbitCamera {
 
   constructor(element) {
     let moving = false;
-    let lastX;
-    let lastY;
 
     element.addEventListener('pointerdown', event => {
       if (event.isPrimary) {
         moving = true;
       }
-      lastX = event.pageX;
-      lastY = event.pageY;
     });
     element.addEventListener('pointermove', event => {
       let xDelta, yDelta;
 
-      if (document.pointerLockEnabled) {
+      if (document.pointerLockEnabled || moving) {
         xDelta = event.movementX;
         yDelta = event.movementY;
-      } else if (moving) {
-        xDelta = event.pageX - lastX;
-        yDelta = event.pageY - lastY;
-        lastX = event.pageX;
-        lastY = event.pageY;
       }
       if (xDelta || yDelta) {
         this.#orbitY += xDelta * 0.025;
