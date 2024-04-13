@@ -658,7 +658,7 @@ export class OrbitCamera {
   }
 
   get viewMatrix() {
-    var mv = this.#cameraMat;
+    const mv = this.#cameraMat;
     mat4.identity(mv);
 
     mat4.translate(mv, mv, this.#target);
