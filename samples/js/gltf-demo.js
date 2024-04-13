@@ -271,14 +271,14 @@ export async function gltfDemo(startup_model) {
           useAlphaCutoff: material.alphaMode == 'MASK',
         },
       }).materialPrimitives;
-      let materialPrimitives = materialPrimitives1.get(gpuMaterial);
-      if (!materialPrimitives) {
-        materialPrimitives = [];
-        materialPrimitives1.set(gpuMaterial, materialPrimitives);
-      }
 
       // Add the primitive to the list of primitives for this material.
-      materialPrimitives.push(gpuPrimitive);
+      const materialPrimitives = materialPrimitives1.get(gpuMaterial);
+      if (materialPrimitives) {
+        materialPrimitives.push(gpuPrimitive);
+      } else {
+        materialPrimitives1.set(gpuMaterial, [gpuPrimitive]);
+      }
     }
   }
 
