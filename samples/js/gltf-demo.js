@@ -572,13 +572,6 @@ export async function gltfDemo(startup_model) {
 export class OrbitCamera {
   orbitX = 0;
   orbitY = 0;
-  maxOrbitX = Math.PI * 0.5;
-  minOrbitX = -Math.PI * 0.5;
-  maxOrbitY = Math.PI;
-  minOrbitY = -Math.PI;
-  constrainXOrbit = true;
-  constrainYOrbit = false;
-
   maxDistance = 10;
   minDistance = 1;
   distanceStep = 0.005;
@@ -654,28 +647,14 @@ export class OrbitCamera {
   orbit(xDelta, yDelta) {
     if (xDelta || yDelta) {
       this.orbitY += xDelta;
-      if (this.constrainYOrbit) {
-        this.orbitY = Math.min(Math.max(this.orbitY, this.minOrbitY), this.maxOrbitY);
-      } else {
-        while (this.orbitY < -Math.PI) {
-          this.orbitY += Math.PI * 2;
-        }
-        while (this.orbitY >= Math.PI) {
-          this.orbitY -= Math.PI * 2;
-        }
+      while (this.orbitY < -Math.PI) {
+        this.orbitY += Math.PI * 2;
+      }
+      while (this.orbitY >= Math.PI) {
+        this.orbitY -= Math.PI * 2;
       }
 
-      this.orbitX += yDelta;
-      if (this.constrainXOrbit) {
-        this.orbitX = Math.min(Math.max(this.orbitX, this.minOrbitX), this.maxOrbitX);
-      } else {
-        while (this.orbitX < -Math.PI) {
-          this.orbitX += Math.PI * 2;
-        }
-        while (this.orbitX >= Math.PI) {
-          this.orbitX -= Math.PI * 2;
-        }
-      }
+      this.orbitX = Math.min(Math.max(this.orbitX + yDelta, -Math.PI * 0.5), Math.PI * 0.5);
 
       this.#dirty = true;
     }
