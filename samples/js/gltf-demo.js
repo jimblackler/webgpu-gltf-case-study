@@ -568,7 +568,6 @@ export class OrbitCamera {
   #orbitY = 0;
   #distance = vec3.create();
   #target;
-  #cameraMat = mat4.create();
   #maxDistance
   #minDistance
 
@@ -617,7 +616,7 @@ export class OrbitCamera {
   }
 
   get viewMatrix() {
-    const mv = this.#cameraMat;
+    const mv = mat4.create();
     mat4.identity(mv);
 
     mat4.translate(mv, mv, this.#target);
@@ -625,7 +624,7 @@ export class OrbitCamera {
     mat4.rotateX(mv, mv, -this.#orbitX);
     mat4.translate(mv, mv, this.#distance);
     const viewMat = mat4.create();
-    mat4.invert(viewMat, this.#cameraMat);
+    mat4.invert(viewMat, mv);
     return viewMat;
   }
 }
