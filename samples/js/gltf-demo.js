@@ -27,7 +27,6 @@ const FRAME_BUFFER_SIZE = Float32Array.BYTES_PER_ELEMENT * 36;
 
 export async function gltfDemo(startup_model) {
   const colorFormat = navigator.gpu?.getPreferredCanvasFormat?.() || 'bgra8unorm';
-  const depthFormat = 'depth24plus';
   const frameArrayBuffer = new ArrayBuffer(FRAME_BUFFER_SIZE);
   const projectionMatrix = new Float32Array(frameArrayBuffer, 0, 16);
   const viewMatrix = new Float32Array(frameArrayBuffer, 16 * Float32Array.BYTES_PER_ELEMENT, 16);
@@ -436,7 +435,7 @@ export async function gltfDemo(startup_model) {
           count: 1,
         },
         depthStencil: {
-          format: depthFormat,
+          format: 'depth24plus',
           depthWriteEnabled: true,
           depthCompare: 'less',
         },
@@ -483,7 +482,7 @@ export async function gltfDemo(startup_model) {
     view: device.createTexture({
       size,
       sampleCount: 1,
-      format: depthFormat,
+      format: 'depth24plus',
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     }).createView(),
     depthClearValue: 1.0,
