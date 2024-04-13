@@ -78,7 +78,7 @@ export async function gltfDemo(startup_model) {
   const sceneAabb = gltf.scenes[gltf.scene].aabb;
 
   const camera = new OrbitCamera(canvas, sceneAabb.center, sceneAabb.radius * 2.0,
-                                 sceneAabb.radius, sceneAabb.radius * 1.5);
+      sceneAabb.radius, sceneAabb.radius * 1.5);
 
   zFar = sceneAabb.radius * 4.0;
 
@@ -151,7 +151,7 @@ export async function gltfDemo(startup_model) {
 
     let baseColor = gltf.gpuTextures[material.pbrMetallicRoughness?.baseColorTexture?.index];
     if (!baseColor) {
-   throw Error();
+      throw Error();
     }
 
     materialGpuData.set(material, {
@@ -558,6 +558,7 @@ export async function gltfDemo(startup_model) {
 
     device.queue.submit([commandEncoder.finish()]);
   }
+
   // Start the render loop.
   requestAnimationFrame(frameCallback);
 }
@@ -575,7 +576,7 @@ export class OrbitCamera {
     this.#target = vec3.clone(target)
     this.#maxDistance = maxDistance
     this.#minDistance = minDistance
-    this.distance = distance;
+    this.#distance[2] = Math.min(Math.max(distance, this.#minDistance), this.#maxDistance);
 
     let moving = false;
 
@@ -609,14 +610,11 @@ export class OrbitCamera {
       }
     });
     element.addEventListener('mousewheel', (event) => {
-      this.distance = this.#distance[2] - event.wheelDeltaY * 0.005;
+      this.#distance[2] = Math.min(Math.max(this.#distance[2] - event.wheelDeltaY * 0.005,
+          this.#minDistance), this.#maxDistance);
       event.preventDefault();
     });
   }
-
-  set distance(value) {
-    this.#distance[2] = Math.min(Math.max(value, this.#minDistance), this.#maxDistance);
-  };
 
   get viewMatrix() {
     const mv = this.#cameraMat;
