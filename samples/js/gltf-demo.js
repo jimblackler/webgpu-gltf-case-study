@@ -33,7 +33,6 @@ export async function gltfDemo(startup_model) {
   const frameArrayBuffer = new ArrayBuffer(FRAME_BUFFER_SIZE);
   const projectionMatrix = new Float32Array(frameArrayBuffer, 0, 16);
   const viewMatrix = new Float32Array(frameArrayBuffer, 16 * Float32Array.BYTES_PER_ELEMENT, 16);
-  const cameraPosition = new Float32Array(frameArrayBuffer, 32 * Float32Array.BYTES_PER_ELEMENT, 3);
   const timeArray = new Float32Array(frameArrayBuffer, 35 * Float32Array.BYTES_PER_ELEMENT, 1);
 
   const fov = Math.PI * 0.5;
@@ -43,9 +42,6 @@ export async function gltfDemo(startup_model) {
   const canvas = document.querySelector('.webgpu-canvas');
 
   const context = canvas.getContext('webgpu');
-
-  const camera = new OrbitCamera(canvas);
-
 
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
@@ -80,6 +76,8 @@ export async function gltfDemo(startup_model) {
 
   const gltf = await new TinyGltfWebGpu(device).loadFromUrl(GltfModels[startup_model]);
   const sceneAabb = gltf.scenes[gltf.scene].aabb;
+
+  const camera = new OrbitCamera(canvas);
 
   camera.target = sceneAabb.center;
   camera.maxDistance = sceneAabb.radius * 2.0;
@@ -514,7 +512,6 @@ export async function gltfDemo(startup_model) {
 
     // Update the frame uniforms
     viewMatrix.set(camera.viewMatrix);
-    cameraPosition.set(camera.position);
     timeArray[0] = t;
 
     device.queue.writeBuffer(frameUniformBuffer, 0, frameArrayBuffer);
