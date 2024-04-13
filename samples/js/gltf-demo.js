@@ -573,8 +573,6 @@ export class OrbitCamera {
   orbitX = 0;
   orbitY = 0;
   distanceStep = 0.005;
-  constrainDistance = true;
-
   #distance = vec3.create([0, 0, 5]);
   #target = vec3.create();
   #viewMat = mat4.create();
@@ -650,10 +648,7 @@ export class OrbitCamera {
   };
 
   set distance(value) {
-    this.#distance[2] = value;
-    if (this.constrainDistance) {
-      this.#distance[2] = Math.min(Math.max(this.#distance[2], 1), 10);
-    }
+    this.#distance[2] = Math.min(Math.max(value, 1), 10);
     this.#dirty = true;
   };
 
