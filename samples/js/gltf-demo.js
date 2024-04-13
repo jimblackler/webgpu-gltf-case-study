@@ -645,10 +645,6 @@ export class OrbitCamera {
     }
   }
 
-  get target() {
-    return [this.#target[0], this.#target[1], this.#target[2]];
-  }
-
   set target(value) {
     this.#target[0] = value[0];
     this.#target[1] = value[1];
