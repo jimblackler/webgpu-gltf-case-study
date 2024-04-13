@@ -573,22 +573,9 @@ function orbitCamera(element, target, maxDistance, minDistance, distanceValue, c
 
   broadcast();
 
-  let moving = false;
-
-  element.addEventListener('pointerdown', event => {
-    if (event.isPrimary) {
-      moving = true;
-    }
-  });
-  element.addEventListener('pointermove', event => {
-    let xDelta, yDelta;
-
-    if (document.pointerLockEnabled || moving) {
-      xDelta = event.movementX;
-      yDelta = event.movementY;
-    }
-    if (xDelta || yDelta) {
-      orbitY += xDelta * 0.025;
+  function pointerMove(event) {
+    if (event.movementX || event.movementY) {
+      orbitY += event.movementX * 0.025;
       while (orbitY < -Math.PI) {
         orbitY += Math.PI * 2;
       }
@@ -596,15 +583,21 @@ function orbitCamera(element, target, maxDistance, minDistance, distanceValue, c
         orbitY -= Math.PI * 2;
       }
 
-      orbitX = Math.min(Math.max(orbitX + yDelta * 0.025, -Math.PI * 0.5), Math.PI * 0.5);
+      orbitX = Math.min(Math.max(orbitX + event.movementY * 0.025, -Math.PI * 0.5), Math.PI * 0.5);
       broadcast();
     }
+  }
+
+  function pointerUp(event) {
+    element.removeEventListener('pointermove', pointerMove);
+    element.removeEventListener('pointerup', pointerUp);
+  }
+
+  element.addEventListener('pointerdown', event => {
+    element.addEventListener('pointermove', pointerMove);
+    element.addEventListener('pointerup', pointerUp);
   });
-  element.addEventListener('pointerup', event => {
-    if (event.isPrimary) {
-      moving = false;
-    }
-  });
+
   element.addEventListener('mousewheel', event => {
     const wheelDeltaY = event.wheelDeltaY;
     if (wheelDeltaY) {
