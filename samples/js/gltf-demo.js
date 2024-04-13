@@ -590,14 +590,15 @@ export class OrbitCamera {
     let moving = false;
     let lastX, lastY;
 
-    const downCallback = (event) => {
+    this.#element = element;
+    element.addEventListener('pointerdown', event => {
       if (event.isPrimary) {
         moving = true;
       }
       lastX = event.pageX;
       lastY = event.pageY;
-    };
-    const moveCallback = (event) => {
+    });
+    element.addEventListener('pointermove', event => {
       let xDelta, yDelta;
 
       if (document.pointerLockEnabled) {
@@ -611,22 +612,16 @@ export class OrbitCamera {
         lastY = event.pageY;
         this.orbit(xDelta * 0.025, yDelta * 0.025);
       }
-    };
-    const upCallback = (event) => {
+    });
+    element.addEventListener('pointerup', event => {
       if (event.isPrimary) {
         moving = false;
       }
-    };
-    const wheelCallback = (event) => {
+    });
+    element.addEventListener('mousewheel', (event) => {
       this.distance = this.#distance[2] + (-event.wheelDeltaY * this.distanceStep);
       event.preventDefault();
-    };
-
-    this.#element = element;
-    this.#element.addEventListener('pointerdown', downCallback);
-    this.#element.addEventListener('pointermove', moveCallback);
-    this.#element.addEventListener('pointerup', upCallback);
-    this.#element.addEventListener('mousewheel', wheelCallback);
+    });
   }
 
   orbit(xDelta, yDelta) {
