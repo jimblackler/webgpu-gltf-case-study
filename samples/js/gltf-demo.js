@@ -598,7 +598,17 @@ export class OrbitCamera {
         lastX = event.pageX;
         lastY = event.pageY;
       }
-      this.orbit(xDelta * 0.025, yDelta * 0.025);
+      if (xDelta || yDelta) {
+        this.#orbitY += xDelta * 0.025;
+        while (this.#orbitY < -Math.PI) {
+          this.#orbitY += Math.PI * 2;
+        }
+        while (this.#orbitY >= Math.PI) {
+          this.#orbitY -= Math.PI * 2;
+        }
+
+        this.#orbitX = Math.min(Math.max(this.#orbitX + yDelta * 0.025, -Math.PI * 0.5), Math.PI * 0.5);
+      }
     });
     element.addEventListener('pointerup', event => {
       if (event.isPrimary) {
@@ -610,21 +620,6 @@ export class OrbitCamera {
       event.preventDefault();
     });
   }
-
-  orbit(xDelta, yDelta) {
-    if (xDelta || yDelta) {
-      this.#orbitY += xDelta;
-      while (this.#orbitY < -Math.PI) {
-        this.#orbitY += Math.PI * 2;
-      }
-      while (this.#orbitY >= Math.PI) {
-        this.#orbitY -= Math.PI * 2;
-      }
-
-      this.#orbitX = Math.min(Math.max(this.#orbitX + yDelta, -Math.PI * 0.5), Math.PI * 0.5);
-    }
-  }
-
   set target(value) {
     this.#target[0] = value[0];
     this.#target[1] = value[1];
