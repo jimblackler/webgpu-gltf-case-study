@@ -222,14 +222,11 @@ export async function gltfDemo(startup_model) {
           attribute.offset -= gpuBuffer.offset;
         }
         // Sort the attributes by shader location.
-        buffer.attributes = buffer.attributes.sort((a, b) => {
-          return a.shaderLocation - b.shaderLocation;
-        });
+        buffer.attributes = buffer.attributes.sort((a, b) => a.shaderLocation - b.shaderLocation);
       }
       // Sort the buffers by their first attribute's shader location.
-      const sortedBufferLayout = [...bufferLayout.values()].sort((a, b) => {
-        return a.attributes[0].shaderLocation - b.attributes[0].shaderLocation;
-      });
+      const sortedBufferLayout = [...bufferLayout.values()].sort(
+          (a, b) => a.attributes[0].shaderLocation - b.attributes[0].shaderLocation);
 
       // Ensure that the gpuBuffers are saved in the same order as the buffer layout.
       const sortedGpuBuffers = [];
