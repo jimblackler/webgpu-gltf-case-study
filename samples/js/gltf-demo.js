@@ -233,15 +233,13 @@ export async function gltfDemo(startup_model) {
 
       const instances = primitiveInstances.matrices.get(primitive);
 
-      const first = primitiveInstances.offset;
-      const count = instances.length;
-
       instances.forEach((instance, i) => {
-        primitiveInstances.arrayBuffer.set(instance.worldMatrix, (first + i) * 32);
-        primitiveInstances.arrayBuffer.set(instance.normalMatrix, (first + i) * 32 + 16);
+        const idx = primitiveInstances.offset + i;
+        primitiveInstances.arrayBuffer.set(instance.worldMatrix, idx * 32);
+        primitiveInstances.arrayBuffer.set(instance.normalMatrix, idx * 32 + 16);
       });
 
-      primitiveInstances.offset += count;
+      primitiveInstances.offset += instances.length;
       const gpuPrimitive = {
         buffers: sortedGpuBuffers,
         drawCount,
