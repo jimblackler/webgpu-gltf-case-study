@@ -638,10 +638,6 @@ export class OrbitCamera {
     this.#target[2] = value[2];
   };
 
-  get distance() {
-    return -this.#distance[2];
-  };
-
   set distance(value) {
     this.#distance[2] = Math.min(Math.max(value, 1), 10);
   };
