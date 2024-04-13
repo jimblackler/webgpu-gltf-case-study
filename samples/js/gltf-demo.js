@@ -637,12 +637,6 @@ export class OrbitCamera {
     this.#distance[2] = Math.min(Math.max(value, 1), 10);
   };
 
-  get position() {
-    vec3.set(this.#position, 0, 0, 0);
-    vec3.transformMat4(this.#position, this.#position, this.#cameraMat);
-    return this.#position;
-  }
-
   get viewMatrix() {
     const mv = this.#cameraMat;
     mat4.identity(mv);
