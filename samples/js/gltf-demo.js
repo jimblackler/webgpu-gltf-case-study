@@ -651,30 +651,21 @@ export class OrbitCamera {
     this.#dirty = true;
   };
 
-  #updateMatrices() {
-    if (this.#dirty) {
-      var mv = this.#cameraMat;
-      mat4.identity(mv);
-
-      mat4.translate(mv, mv, this.#target);
-      mat4.rotateY(mv, mv, -this.orbitY);
-      mat4.rotateX(mv, mv, -this.orbitX);
-      mat4.translate(mv, mv, this.#distance);
-      mat4.invert(this.#viewMat, this.#cameraMat);
-
-      this.#dirty = false;
-    }
-  }
-
   get position() {
-    this.#updateMatrices();
     vec3.set(this.#position, 0, 0, 0);
     vec3.transformMat4(this.#position, this.#position, this.#cameraMat);
     return this.#position;
   }
 
   get viewMatrix() {
-    this.#updateMatrices();
+    var mv = this.#cameraMat;
+    mat4.identity(mv);
+
+    mat4.translate(mv, mv, this.#target);
+    mat4.rotateY(mv, mv, -this.orbitY);
+    mat4.rotateX(mv, mv, -this.orbitX);
+    mat4.translate(mv, mv, this.#distance);
+    mat4.invert(this.#viewMat, this.#cameraMat);
     return this.#viewMat;
   }
 }
