@@ -35,7 +35,6 @@ export async function gltfDemo(startup_model) {
   const viewMatrix = new Float32Array(frameArrayBuffer, 16 * Float32Array.BYTES_PER_ELEMENT, 16);
   const fov = Math.PI * 0.5;
   const zNear = 0.01;
-  let zFar = 128;
 
   const canvas = document.querySelector('.webgpu-canvas');
 
@@ -77,8 +76,6 @@ export async function gltfDemo(startup_model) {
 
   orbitCamera(canvas, sceneAabb.center, sceneAabb.radius * 2.0,
       sceneAabb.radius, sceneAabb.radius * 1.5, mtx => viewMatrix.set(mtx));
-
-  zFar = sceneAabb.radius * 4.0;
 
   const pipelineGpuData = new Map();
   const shaderModules = new Map();
@@ -507,7 +504,7 @@ export async function gltfDemo(startup_model) {
     const aspect = canvas.width / canvas.height;
     // Using mat4.perspectiveZO instead of mat4.perpective because WebGPU's
     // normalized device coordinates Z range is [0, 1], instead of WebGL's [-1, 1]
-    mat4.perspectiveZO(projectionMatrix, fov, aspect, zNear, zFar); // right place??
+    mat4.perspectiveZO(projectionMatrix, fov, aspect, zNear, sceneAabb.radius * 4.0);
     const commandEncoder = device.createCommandEncoder();
     colorAttachment.view = context.getCurrentTexture().createView();
     const renderPass = commandEncoder.beginRenderPass({
