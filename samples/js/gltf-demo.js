@@ -585,7 +585,6 @@ export class OrbitCamera {
   #dirty = true;
 
   #element;
-  #registerElement;
 
   constructor(element) {
     let moving = false;
@@ -623,25 +622,11 @@ export class OrbitCamera {
       event.preventDefault();
     };
 
-    this.#registerElement = (value) => {
-      if (this.#element && this.#element != value) {
-        this.#element.removeEventListener('pointerdown', downCallback);
-        this.#element.removeEventListener('pointermove', moveCallback);
-        this.#element.removeEventListener('pointerup', upCallback);
-        this.#element.removeEventListener('mousewheel', wheelCallback);
-      }
-
-      this.#element = value;
-      if (this.#element) {
-        this.#element.addEventListener('pointerdown', downCallback);
-        this.#element.addEventListener('pointermove', moveCallback);
-        this.#element.addEventListener('pointerup', upCallback);
-        this.#element.addEventListener('mousewheel', wheelCallback);
-      }
-    }
-
     this.#element = element;
-    this.#registerElement(element);
+    this.#element.addEventListener('pointerdown', downCallback);
+    this.#element.addEventListener('pointermove', moveCallback);
+    this.#element.addEventListener('pointerup', upCallback);
+    this.#element.addEventListener('mousewheel', wheelCallback);
   }
 
   orbit(xDelta, yDelta) {
