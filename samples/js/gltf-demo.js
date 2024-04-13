@@ -617,8 +617,6 @@ export class OrbitCamera {
 
   get viewMatrix() {
     const mv = mat4.create();
-    mat4.identity(mv);
-
     mat4.translate(mv, mv, this.#target);
     mat4.rotateY(mv, mv, -this.#orbitY);
     mat4.rotateX(mv, mv, -this.#orbitX);
