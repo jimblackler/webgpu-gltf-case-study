@@ -489,7 +489,7 @@ export async function gltfDemo(startup_model) {
     colorAttachment.view = context.getCurrentTexture().createView();
     const renderPass = commandEncoder.beginRenderPass({
       colorAttachments: [colorAttachment],
-      depthStencilAttachment: depthStencilAttachment
+      depthStencilAttachment
     });
 
     renderPass.setBindGroup(0, frameBindGroup);
