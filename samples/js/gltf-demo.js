@@ -555,18 +555,16 @@ export async function gltfDemo(startup_model) {
   requestAnimationFrame(frameCallback);
 }
 
-function orbitCamera(element, target, maxDistance, minDistance, distanceValue, callback) {
+function orbitCamera(element, target, maxDistance, minDistance, distance, callback) {
   let orbitX = 0;
   let orbitY = 0;
-
-  const distance = vec3.fromValues(0, 0, distanceValue);
 
   function broadcast() {
     const mv = mat4.create();
     mat4.translate(mv, mv, target);
     mat4.rotateY(mv, mv, -orbitY);
     mat4.rotateX(mv, mv, -orbitX);
-    mat4.translate(mv, mv, distance);
+    mat4.translate(mv, mv, vec3.fromValues(0, 0, distance));
     mat4.invert(mv, mv);
     callback(mv)
   }
@@ -601,8 +599,8 @@ function orbitCamera(element, target, maxDistance, minDistance, distanceValue, c
   element.addEventListener('mousewheel', event => {
     const wheelDeltaY = event.wheelDeltaY;
     if (wheelDeltaY) {
-      distance[2] =
-          Math.min(Math.max(distance[2] - wheelDeltaY * 0.005, minDistance), maxDistance);
+      distance =
+          Math.min(Math.max(distance - wheelDeltaY * 0.005, minDistance), maxDistance);
       broadcast();
     }
     event.preventDefault();
