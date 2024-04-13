@@ -504,8 +504,6 @@ export async function gltfDemo(startup_model) {
   function frameCallback(t) {
     requestAnimationFrame(frameCallback);
 
-    const frameStart = performance.now();
-
     // Update the frame uniforms
     viewMatrix.set(camera.viewMatrix);
     timeArray[0] = t;
