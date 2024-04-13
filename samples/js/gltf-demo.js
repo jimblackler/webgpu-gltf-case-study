@@ -229,10 +229,7 @@ export async function gltfDemo(startup_model) {
           (a, b) => a.attributes[0].shaderLocation - b.attributes[0].shaderLocation);
 
       // Ensure that the gpuBuffers are saved in the same order as the buffer layout.
-      const sortedGpuBuffers = [];
-      for (const buffer of sortedBufferLayout) {
-        sortedGpuBuffers.push(gpuBuffers.get(buffer));
-      }
+      const sortedGpuBuffers = sortedBufferLayout.map(buffer => gpuBuffers.get(buffer));
 
       const instances = primitiveInstances.matrices.get(primitive);
 
