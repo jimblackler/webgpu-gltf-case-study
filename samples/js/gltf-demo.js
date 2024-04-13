@@ -577,7 +577,6 @@ export class OrbitCamera {
   #viewMat = mat4.create();
   #cameraMat = mat4.create();
   #position = vec3.create();
-  #dirty = true;
 
   #element;
 
@@ -630,8 +629,6 @@ export class OrbitCamera {
       }
 
       this.orbitX = Math.min(Math.max(this.orbitX + yDelta, -Math.PI * 0.5), Math.PI * 0.5);
-
-      this.#dirty = true;
     }
   }
 
@@ -639,7 +636,6 @@ export class OrbitCamera {
     this.#target[0] = value[0];
     this.#target[1] = value[1];
     this.#target[2] = value[2];
-    this.#dirty = true;
   };
 
   get distance() {
@@ -648,7 +644,6 @@ export class OrbitCamera {
 
   set distance(value) {
     this.#distance[2] = Math.min(Math.max(value, 1), 10);
-    this.#dirty = true;
   };
 
   get position() {
