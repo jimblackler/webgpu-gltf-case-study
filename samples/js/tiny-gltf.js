@@ -5,8 +5,8 @@
  * It should generally not be used outside of simple tutorials or examples.
  */
 
-import { WebGPUMipmapGenerator } from './webgpu-mipmap-generator.js';
-import { mat4 } from '../node_modules/gl-matrix/esm/index.js';
+import {WebGPUMipmapGenerator} from './webgpu-mipmap-generator.js';
+import {mat4} from '../node_modules/gl-matrix/esm/index.js';
 import {AABB} from "./aabb.js";
 
 const GLB_MAGIC = 0x46546C67;
@@ -23,24 +23,26 @@ const absUriRegEx = new RegExp(`^${window.location.protocol}`, 'i');
 const dataUriRegEx = /^data:/;
 function resolveUri(uri, baseUrl) {
   if (!!uri.match(absUriRegEx) || !!uri.match(dataUriRegEx)) {
-      return uri;
+    return uri;
   }
   return baseUrl + uri;
 }
 
 function setWorldMatrix(gltf, node, parentWorldMatrix) {
   // Don't recompute nodes we've already visited.
-  if (node.worldMatrix) { return; }
+  if (node.worldMatrix) {
+    return;
+  }
 
   if (node.matrix) {
     node.worldMatrix = mat4.clone(node.matrix);
   } else {
     node.worldMatrix = mat4.create();
     mat4.fromRotationTranslationScale(
-      node.worldMatrix,
-      node.rotation,
-      node.translation,
-      node.scale);
+        node.worldMatrix,
+        node.rotation,
+        node.translation,
+        node.scale);
   }
 
   mat4.multiply(node.worldMatrix, parentWorldMatrix, node.worldMatrix);
@@ -196,7 +198,9 @@ export class TinyGltf {
     // Images
     const pendingImages = [];
     for (let index = 0; index < json.images?.length || 0; ++index) {
-      if (activeImageSet && !activeImageSet.has(index)) { continue; }
+      if (activeImageSet && !activeImageSet.has(index)) {
+        continue;
+      }
       const image = json.images[index];
       if (image.uri) {
         pendingImages[index] = fetch(resolveUri(image.uri, baseUrl)).then(async (response) => {
@@ -206,8 +210,8 @@ export class TinyGltf {
         const bufferView = json.bufferViews[image.bufferView];
         pendingImages[index] = pendingBuffers[bufferView.buffer].then((buffer) => {
           const blob = new Blob(
-            [new Uint8Array(buffer, bufferView.byteOffset, bufferView.byteLength)],
-            {type: image.mimeType});
+              [new Uint8Array(buffer, bufferView.byteOffset, bufferView.byteLength)],
+              {type: image.mimeType});
           return createImageBitmap(blob);
         });
       }
@@ -239,23 +243,35 @@ export class TinyGltf {
 
   static componentCountForType(type) {
     switch (type) {
-      case 'SCALAR': return 1;
-      case 'VEC2': return 2;
-      case 'VEC3': return 3;
-      case 'VEC4': return 4;
-      default: return 0;
+      case 'SCALAR':
+        return 1;
+      case 'VEC2':
+        return 2;
+      case 'VEC3':
+        return 3;
+      case 'VEC4':
+        return 4;
+      default:
+        return 0;
     }
   }
 
   static sizeForComponentType(componentType) {
     switch (componentType) {
-      case GL.BYTE: return 1;
-      case GL.UNSIGNED_BYTE: return 1;
-      case GL.SHORT: return 2;
-      case GL.UNSIGNED_SHORT: return 2;
-      case GL.UNSIGNED_INT: return 4;
-      case GL.FLOAT: return 4;
-      default: return 0;
+      case GL.BYTE:
+        return 1;
+      case GL.UNSIGNED_BYTE:
+        return 1;
+      case GL.SHORT:
+        return 2;
+      case GL.UNSIGNED_SHORT:
+        return 2;
+      case GL.UNSIGNED_INT:
+        return 4;
+      case GL.FLOAT:
+        return 4;
+      default:
+        return 0;
     }
   }
 
@@ -276,15 +292,20 @@ const GL = WebGLRenderingContext;
 
 function gpuAddressModeForWrap(wrap) {
   switch (wrap) {
-    case GL.CLAMP_TO_EDGE: return 'clamp-to-edge';
-    case GL.MIRRORED_REPEAT: return 'mirror-repeat';
-    default: return 'repeat';
+    case GL.CLAMP_TO_EDGE:
+      return 'clamp-to-edge';
+    case GL.MIRRORED_REPEAT:
+      return 'mirror-repeat';
+    default:
+      return 'repeat';
   }
 }
 
 function createGpuBufferFromBufferView(device, bufferView, buffer, usage) {
   // For our purposes we're only worried about bufferViews that have a vertex or index usage.
-  if (!usage) { return null; }
+  if (!usage) {
+    return null;
+  }
 
   const gpuBuffer = device.createBuffer({
     label: bufferView.name,
@@ -369,10 +390,12 @@ export class TinyGltfWebGpu extends TinyGltf {
     // (There's technically a target attribute on the buffer view that's supposed to tell us what
     // it's used for, but that appears to be rarely populated.)
     const bufferViewUsages = [];
+
     function markAccessorUsage(accessorIndex, usage) {
       const accessor = gltf.accessors[accessorIndex];
       bufferViewUsages[accessor.bufferView] |= usage;
     }
+
     for (const mesh of gltf.meshes) {
       for (const primitive of mesh.primitives) {
         if ('indices' in primitive) {
@@ -395,7 +418,9 @@ export class TinyGltfWebGpu extends TinyGltf {
       const imageTextures = [];
       if (gltf.images) {
         for (const [index, image] of Object.entries(gltf.images)) {
-          if (!image) { continue; }
+          if (!image) {
+            continue;
+          }
           imageTextures[index] = createGpuTextureFromImage(device, image, this.mipmapGenerator);
         }
       }
@@ -410,7 +435,9 @@ export class TinyGltfWebGpu extends TinyGltf {
       if (gltf.textures) {
         for (const [index, texture] of Object.entries(gltf.textures)) {
           const imageTexture = imageTextures[texture.source];
-          if (!imageTexture) { continue; }
+          if (!imageTexture) {
+            continue;
+          }
           gltf.gpuTextures[index] = {
             texture: imageTexture,
             sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler,
@@ -428,30 +455,44 @@ export class TinyGltfWebGpu extends TinyGltf {
     const count = TinyGltf.componentCountForType(accessor.type);
     const x = count > 1 ? `x${count}` : '';
     switch (accessor.componentType) {
-      case GL.BYTE: return `s${norm}8${x}`;
-      case GL.UNSIGNED_BYTE: return `u${norm}8${x}`;
-      case GL.SHORT: return `s${norm}16${x}`;
-      case GL.UNSIGNED_SHORT: return `u${norm}16${x}`;
-      case GL.UNSIGNED_INT: return `u${norm}32${x}`;
-      case GL.FLOAT: return `float32${x}`;
+      case GL.BYTE:
+        return `s${norm}8${x}`;
+      case GL.UNSIGNED_BYTE:
+        return `u${norm}8${x}`;
+      case GL.SHORT:
+        return `s${norm}16${x}`;
+      case GL.UNSIGNED_SHORT:
+        return `u${norm}16${x}`;
+      case GL.UNSIGNED_INT:
+        return `u${norm}32${x}`;
+      case GL.FLOAT:
+        return `float32${x}`;
     }
   }
 
   static gpuPrimitiveTopologyForMode(mode) {
     switch (mode) {
-      case GL.TRIANGLES: return 'triangle-list';
-      case GL.TRIANGLE_STRIP: return 'triangle-strip';
-      case GL.LINES: return 'line-list';
-      case GL.LINE_STRIP: return 'line-strip';
-      case GL.POINTS: return 'point-list';
+      case GL.TRIANGLES:
+        return 'triangle-list';
+      case GL.TRIANGLE_STRIP:
+        return 'triangle-strip';
+      case GL.LINES:
+        return 'line-list';
+      case GL.LINE_STRIP:
+        return 'line-strip';
+      case GL.POINTS:
+        return 'point-list';
     }
   }
 
   static gpuIndexFormatForComponentType(componentType) {
     switch (componentType) {
-      case GL.UNSIGNED_SHORT: return 'uint16';
-      case GL.UNSIGNED_INT: return 'uint32';
-      default: return 0;
+      case GL.UNSIGNED_SHORT:
+        return 'uint16';
+      case GL.UNSIGNED_INT:
+        return 'uint32';
+      default:
+        return 0;
     }
   }
 }
