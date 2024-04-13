@@ -183,7 +183,6 @@ export async function gltfDemo(startup_model) {
         const offset = accessor.byteOffset;
 
         let buffer = bufferLayout.get(accessor.bufferView);
-        let gpuBuffer;
 
         let separate = buffer && (Math.abs(offset - buffer.attributes[0].offset) >= buffer.arrayStride);
         if (!buffer || separate) {
@@ -198,7 +197,7 @@ export async function gltfDemo(startup_model) {
             offset
           });
         } else {
-          gpuBuffer = gpuBuffers.get(buffer);
+          const gpuBuffer = gpuBuffers.get(buffer);
           gpuBuffer.offset = Math.min(gpuBuffer.offset, offset);
         }
 
