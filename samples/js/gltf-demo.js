@@ -578,13 +578,11 @@ export class OrbitCamera {
   #cameraMat = mat4.create();
   #position = vec3.create();
 
-  #element;
-
   constructor(element) {
     let moving = false;
-    let lastX, lastY;
+    let lastX;
+    let lastY;
 
-    this.#element = element;
     element.addEventListener('pointerdown', event => {
       if (event.isPrimary) {
         moving = true;
