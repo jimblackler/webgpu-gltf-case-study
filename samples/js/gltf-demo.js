@@ -567,7 +567,6 @@ export async function gltfDemo(startup_model) {
   }
   // Start the render loop.
   requestAnimationFrame(frameCallback);
-
 }
 
 export class OrbitCamera {
@@ -595,7 +594,7 @@ export class OrbitCamera {
   #element;
   #registerElement;
 
-  constructor(element = null) {
+  constructor(element) {
     let moving = false;
     let lastX, lastY;
 
@@ -650,14 +649,6 @@ export class OrbitCamera {
 
     this.#element = element;
     this.#registerElement(element);
-  }
-
-  set element(value) {
-    this.#registerElement(value);
-  }
-
-  get element() {
-    return this.#element;
   }
 
   orbit(xDelta, yDelta) {
