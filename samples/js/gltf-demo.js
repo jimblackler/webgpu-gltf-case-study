@@ -570,8 +570,8 @@ export async function gltfDemo(startup_model) {
 }
 
 export class OrbitCamera {
-  orbitX = 0;
-  orbitY = 0;
+  #orbitX = 0;
+  #orbitY = 0;
   #distance = vec3.create([0, 0, 5]);
   #target = vec3.create();
   #viewMat = mat4.create();
@@ -620,15 +620,15 @@ export class OrbitCamera {
 
   orbit(xDelta, yDelta) {
     if (xDelta || yDelta) {
-      this.orbitY += xDelta;
-      while (this.orbitY < -Math.PI) {
-        this.orbitY += Math.PI * 2;
+      this.#orbitY += xDelta;
+      while (this.#orbitY < -Math.PI) {
+        this.#orbitY += Math.PI * 2;
       }
-      while (this.orbitY >= Math.PI) {
-        this.orbitY -= Math.PI * 2;
+      while (this.#orbitY >= Math.PI) {
+        this.#orbitY -= Math.PI * 2;
       }
 
-      this.orbitX = Math.min(Math.max(this.orbitX + yDelta, -Math.PI * 0.5), Math.PI * 0.5);
+      this.#orbitX = Math.min(Math.max(this.#orbitX + yDelta, -Math.PI * 0.5), Math.PI * 0.5);
     }
   }
 
@@ -653,8 +653,8 @@ export class OrbitCamera {
     mat4.identity(mv);
 
     mat4.translate(mv, mv, this.#target);
-    mat4.rotateY(mv, mv, -this.orbitY);
-    mat4.rotateX(mv, mv, -this.orbitX);
+    mat4.rotateY(mv, mv, -this.#orbitY);
+    mat4.rotateX(mv, mv, -this.#orbitX);
     mat4.translate(mv, mv, this.#distance);
     mat4.invert(this.#viewMat, this.#cameraMat);
     return this.#viewMat;
