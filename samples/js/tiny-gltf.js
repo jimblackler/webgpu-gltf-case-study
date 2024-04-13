@@ -5,7 +5,6 @@
  * It should generally not be used outside of simple tutorials or examples.
  */
 
-import {WebGPUMipmapGenerator} from './webgpu-mipmap-generator.js';
 import {mat4} from '../node_modules/gl-matrix/esm/index.js';
 import {AABB} from "./aabb.js";
 
@@ -353,8 +352,8 @@ function createGpuSamplerFromSampler(device, sampler = {name: 'glTF default samp
   return device.createSampler(descriptor);
 }
 
-function createGpuTextureFromImage(device, source, mipmapGenerator) {
-  const mipLevelCount = Math.floor(Math.log2(Math.max(source.width, source.height))) + 1;
+function createGpuTextureFromImage(device, source) {
+  const mipLevelCount = 1;
   const descriptor = {
     size: {width: source.width, height: source.height},
     format: 'rgba8unorm',
@@ -364,7 +363,6 @@ function createGpuTextureFromImage(device, source, mipmapGenerator) {
 
   const texture = device.createTexture(descriptor);
   device.queue.copyExternalImageToTexture({source}, {texture}, descriptor.size);
-  mipmapGenerator.generateMipmap(texture, descriptor);
 
   return texture;
 }
@@ -374,7 +372,6 @@ export class TinyGltfWebGpu extends TinyGltf {
     super();
 
     this.device = device;
-    this.mipmapGenerator = new WebGPUMipmapGenerator(device);
     this.defaultSampler = createGpuSamplerFromSampler(device);
   }
 
@@ -421,7 +418,7 @@ export class TinyGltfWebGpu extends TinyGltf {
           if (!image) {
             continue;
           }
-          imageTextures[index] = createGpuTextureFromImage(device, image, this.mipmapGenerator);
+          imageTextures[index] = createGpuTextureFromImage(device, image);
         }
       }
 
