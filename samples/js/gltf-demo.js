@@ -77,12 +77,8 @@ export async function gltfDemo(startup_model) {
   const gltf = await new TinyGltfWebGpu(device).loadFromUrl(GltfModels[startup_model]);
   const sceneAabb = gltf.scenes[gltf.scene].aabb;
 
-  const camera = new OrbitCamera(canvas);
-
-  camera.target = sceneAabb.center;
-  camera.maxDistance = sceneAabb.radius * 2.0;
-  camera.minDistance = sceneAabb.radius * 0.25;
-  camera.distance = sceneAabb.radius * 1.5;
+  const camera = new OrbitCamera(canvas, sceneAabb.center, sceneAabb.radius * 2.0,
+                                 sceneAabb.radius, sceneAabb.radius * 1.5);
 
   zFar = sceneAabb.radius * 4.0;
 
@@ -569,12 +565,19 @@ export async function gltfDemo(startup_model) {
 export class OrbitCamera {
   #orbitX = 0;
   #orbitY = 0;
-  #distance = vec3.create([0, 0, 5]);
-  #target = vec3.create();
+  #distance = vec3.create();
+  #target;
   #viewMat = mat4.create();
   #cameraMat = mat4.create();
+  #maxDistance
+  #minDistance
 
-  constructor(element) {
+  constructor(element, target, maxDistance, minDistance, distance) {
+    this.#target = vec3.clone(target)
+    this.#maxDistance = maxDistance
+    this.#minDistance = minDistance
+    this.distance = distance;
+
     let moving = false;
 
     element.addEventListener('pointerdown', event => {
@@ -611,14 +614,9 @@ export class OrbitCamera {
       event.preventDefault();
     });
   }
-  set target(value) {
-    this.#target[0] = value[0];
-    this.#target[1] = value[1];
-    this.#target[2] = value[2];
-  };
 
   set distance(value) {
-    this.#distance[2] = Math.min(Math.max(value, 1), 10);
+    this.#distance[2] = Math.min(Math.max(value, this.#minDistance), this.#maxDistance);
   };
 
   get viewMatrix() {
