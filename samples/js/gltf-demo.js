@@ -34,8 +34,6 @@ export async function gltfDemo(startup_model) {
   const projectionMatrix = new Float32Array(frameArrayBuffer, 0, 16);
   const viewMatrix = new Float32Array(frameArrayBuffer, 16 * Float32Array.BYTES_PER_ELEMENT, 16);
   const fov = Math.PI * 0.5;
-  const zNear = 0.01;
-
   const canvas = document.querySelector('.webgpu-canvas');
 
   const context = canvas.getContext('webgpu');
@@ -504,7 +502,7 @@ export async function gltfDemo(startup_model) {
     const aspect = canvas.width / canvas.height;
     // Using mat4.perspectiveZO instead of mat4.perpective because WebGPU's
     // normalized device coordinates Z range is [0, 1], instead of WebGL's [-1, 1]
-    mat4.perspectiveZO(projectionMatrix, fov, aspect, zNear, sceneAabb.radius * 4.0);
+    mat4.perspectiveZO(projectionMatrix, fov, aspect, 0.01, sceneAabb.radius * 4.0);
     const commandEncoder = device.createCommandEncoder();
     colorAttachment.view = context.getCurrentTexture().createView();
     const renderPass = commandEncoder.beginRenderPass({
@@ -528,7 +526,7 @@ export async function gltfDemo(startup_model) {
         // them as usual.
         for (const gpuPrimitive of primitives) {
           for (const [bufferIndex, gpuBuffer] of Object.entries(gpuPrimitive.buffers)) {
-            renderPass.setVertexBuffer(bufferIndex, gpuBuffer.buffer, gpuBuffer.offset);
+            renderPass.setVertexBuffer(Number.parseInt(bufferIndex), gpuBuffer.buffer, gpuBuffer.offset);
           }
           if (gpuPrimitive.indexBuffer) {
             renderPass.setIndexBuffer(gpuPrimitive.indexBuffer, gpuPrimitive.indexType, gpuPrimitive.indexOffset);
