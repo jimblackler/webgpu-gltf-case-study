@@ -255,7 +255,6 @@ export async function gltfDemo(startup_model) {
       }
 
       const material = gltf.materials[primitive.material];
-      const gpuMaterial = materialGpuData.get(material);
 
       // Start passing the material when generating pipeline args.
       // Rather than just storing a list of primitives for each pipeline store a map of
@@ -273,6 +272,7 @@ export async function gltfDemo(startup_model) {
       }).materialPrimitives;
 
       // Add the primitive to the list of primitives for this material.
+      const gpuMaterial = materialGpuData.get(material);
       const materialPrimitives = materialPrimitives1.get(gpuMaterial);
       if (materialPrimitives) {
         materialPrimitives.push(gpuPrimitive);
