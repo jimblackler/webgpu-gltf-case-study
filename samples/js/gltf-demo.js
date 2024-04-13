@@ -572,7 +572,6 @@ export async function gltfDemo(startup_model) {
 export class OrbitCamera {
   orbitX = 0;
   orbitY = 0;
-  distanceStep = 0.005;
   #distance = vec3.create([0, 0, 5]);
   #target = vec3.create();
   #viewMat = mat4.create();
@@ -615,7 +614,7 @@ export class OrbitCamera {
       }
     });
     element.addEventListener('mousewheel', (event) => {
-      this.distance = this.#distance[2] + (-event.wheelDeltaY * this.distanceStep);
+      this.distance = this.#distance[2] + (-event.wheelDeltaY * 0.005);
       event.preventDefault();
     });
   }
