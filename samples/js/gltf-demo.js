@@ -592,14 +592,13 @@ export class OrbitCamera {
       if (document.pointerLockEnabled) {
         xDelta = event.movementX;
         yDelta = event.movementY;
-        this.orbit(xDelta * 0.025, yDelta * 0.025);
       } else if (moving) {
         xDelta = event.pageX - lastX;
         yDelta = event.pageY - lastY;
         lastX = event.pageX;
         lastY = event.pageY;
-        this.orbit(xDelta * 0.025, yDelta * 0.025);
       }
+      this.orbit(xDelta * 0.025, yDelta * 0.025);
     });
     element.addEventListener('pointerup', event => {
       if (event.isPrimary) {
