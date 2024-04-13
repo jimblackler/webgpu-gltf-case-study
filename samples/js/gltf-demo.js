@@ -573,7 +573,6 @@ export class OrbitCamera {
   #target = vec3.create();
   #viewMat = mat4.create();
   #cameraMat = mat4.create();
-  #position = vec3.create();
 
   constructor(element) {
     let moving = false;
