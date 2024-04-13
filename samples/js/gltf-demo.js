@@ -608,7 +608,7 @@ export class OrbitCamera {
       }
     });
     element.addEventListener('mousewheel', (event) => {
-      this.distance = this.#distance[2] + (-event.wheelDeltaY * 0.005);
+      this.distance = this.#distance[2] - event.wheelDeltaY * 0.005;
       event.preventDefault();
     });
   }
