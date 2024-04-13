@@ -621,8 +621,7 @@ export class OrbitCamera {
     mat4.rotateY(mv, mv, -this.#orbitY);
     mat4.rotateX(mv, mv, -this.#orbitX);
     mat4.translate(mv, mv, this.#distance);
-    const viewMat = mat4.create();
-    mat4.invert(viewMat, mv);
-    return viewMat;
+    mat4.invert(mv, mv);
+    return mv;
   }
 }
