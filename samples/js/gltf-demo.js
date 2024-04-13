@@ -572,8 +572,6 @@ export async function gltfDemo(startup_model) {
 export class OrbitCamera {
   orbitX = 0;
   orbitY = 0;
-  maxDistance = 10;
-  minDistance = 1;
   distanceStep = 0.005;
   constrainDistance = true;
 
@@ -654,7 +652,7 @@ export class OrbitCamera {
   set distance(value) {
     this.#distance[2] = value;
     if (this.constrainDistance) {
-      this.#distance[2] = Math.min(Math.max(this.#distance[2], this.minDistance), this.maxDistance);
+      this.#distance[2] = Math.min(Math.max(this.#distance[2], 1), 10);
     }
     this.#dirty = true;
   };
