@@ -453,7 +453,6 @@ export async function gltfDemo(startup_model) {
     return gpuPipeline;
   }
 
-  const size = {width: canvas.width, height: canvas.height};
   const colorAttachment = {
     // Appropriate target will be populated in onFrame
     view: undefined,
@@ -466,7 +465,7 @@ export async function gltfDemo(startup_model) {
 
   const depthStencilAttachment = {
     view: device.createTexture({
-      size,
+      size: {width: canvas.width, height: canvas.height},
       sampleCount: 1,
       format: 'depth24plus',
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
