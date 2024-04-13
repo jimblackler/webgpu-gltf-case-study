@@ -505,18 +505,18 @@ export async function gltfDemo(startup_model) {
 
         // Loop through the primitives that use the current material/pipeline combo and draw
         // them as usual.
-        for (const gpuPrimitive of primitives) {
-          for (const [bufferIndex, gpuBuffer] of Object.entries(gpuPrimitive.buffers)) {
-            renderPass.setVertexBuffer(Number.parseInt(bufferIndex), gpuBuffer.buffer, gpuBuffer.offset);
+        for (const primitive of primitives) {
+          for (const [bufferIndex, buffer] of Object.entries(primitive.buffers)) {
+            renderPass.setVertexBuffer(Number.parseInt(bufferIndex), buffer.buffer, buffer.offset);
           }
-          if (gpuPrimitive.indexBuffer) {
-            renderPass.setIndexBuffer(gpuPrimitive.indexBuffer, gpuPrimitive.indexType, gpuPrimitive.indexOffset);
+          if (primitive.indexBuffer) {
+            renderPass.setIndexBuffer(primitive.indexBuffer, primitive.indexType, primitive.indexOffset);
           }
 
-          if (gpuPrimitive.indexBuffer) {
-            renderPass.drawIndexed(gpuPrimitive.drawCount, gpuPrimitive.instances.count, 0, 0, gpuPrimitive.instances.first);
+          if (primitive.indexBuffer) {
+            renderPass.drawIndexed(primitive.drawCount, primitive.instances.count, 0, 0, primitive.instances.first);
           } else {
-            renderPass.draw(gpuPrimitive.drawCount, gpuPrimitive.instances.count, 0, gpuPrimitive.instances.first);
+            renderPass.draw(primitive.drawCount, primitive.instances.count, 0, primitive.instances.first);
           }
         }
       }
