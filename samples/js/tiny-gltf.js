@@ -285,16 +285,15 @@ function createGpuSamplerFromSampler(device, sampler = {name: 'glTF default samp
 }
 
 function createGpuTextureFromImage(device, source) {
-  const mipLevelCount = 1;
-  const descriptor = {
-    size: {width: source.width, height: source.height},
+  const size = {width: source.width, height: source.height};
+  const texture = device.createTexture({
+    size: size,
     format: 'rgba8unorm',
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-    mipLevelCount
-  };
-
-  const texture = device.createTexture(descriptor);
-  device.queue.copyExternalImageToTexture({source}, {texture}, descriptor.size);
+    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+    mipLevelCount: 1
+  });
+  device.queue.copyExternalImageToTexture({source}, {texture}, size);
 
   return texture;
 }
