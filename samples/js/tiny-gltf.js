@@ -178,14 +178,14 @@ export class TinyGltf {
     // Images will be exposed as ImageBitmaps.
 
     // Buffers
-    const pendingBuffers = [];
+    const buffers = [];
     if (binaryChunk) {
-      pendingBuffers.push(Promise.resolve(binaryChunk));
+      buffers.push(binaryChunk);
     } else {
       for (const index in json.buffers) {
         const buffer = json.buffers[index];
         const uri = resolveUri(buffer.uri, baseUrl);
-        pendingBuffers[index] = fetch(uri).then(response => response.arrayBuffer());
+        buffers[index] = await fetch(uri).then(response => response.arrayBuffer());
       }
     }
 
@@ -207,12 +207,11 @@ export class TinyGltf {
         });
       } else {
         const bufferView = json.bufferViews[image.bufferView];
-        pendingImages[index] = pendingBuffers[bufferView.buffer].then((buffer) => {
-          const blob = new Blob(
-              [new Uint8Array(buffer, bufferView.byteOffset, bufferView.byteLength)],
-              {type: image.mimeType});
-          return createImageBitmap(blob);
-        });
+        const buffer = buffers[bufferView.buffer];
+        const blob = new Blob(
+            [new Uint8Array(buffer, bufferView.byteOffset, bufferView.byteLength)],
+            {type: image.mimeType});
+        pendingImages[index] = createImageBitmap(blob)
       }
     }
 
@@ -234,7 +233,7 @@ export class TinyGltf {
     }
 
     // Replace the resolved resources in the JSON structure.
-    json.buffers = await Promise.all(pendingBuffers);
+    json.buffers = buffers;
     json.images = await Promise.all(pendingImages);
 
     return json;
