@@ -362,12 +362,10 @@ export class TinyGltfWebGpu extends TinyGltf {
         }
       }
 
-      for (const [index, texture] of Object.entries(gltf.textures ?? [])) {
-        gltf.gpuTextures[index] = {
-          texture: imageTextures[texture.source],
-          sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler,
-        }
-      }
+      gltf.gpuTextures = Object.entries(gltf.textures ?? []).map(([index, texture]) => ({
+        texture: imageTextures[texture.source],
+        sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
+      }));
     }
     gltf.gpuDefaultSampler = this.defaultSampler;
 
