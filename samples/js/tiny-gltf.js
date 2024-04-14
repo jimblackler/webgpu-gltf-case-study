@@ -13,10 +13,6 @@ const CHUNK_TYPE = {
   BIN: 0x004E4942,
 };
 
-const DEFAULT_TRANSLATION = [0, 0, 0];
-const DEFAULT_ROTATION = [0, 0, 0, 1];
-const DEFAULT_SCALE = [1, 1, 1];
-
 const absUriRegEx = new RegExp(`^${window.location.protocol}`, 'i');
 const dataUriRegEx = /^data:/;
 
@@ -132,9 +128,9 @@ export class TinyGltf {
 
     for (const node of json.nodes) {
       if (!node.matrix) {
-        node.rotation = node.rotation ?? DEFAULT_ROTATION;
-        node.scale = node.scale ?? DEFAULT_SCALE;
-        node.translation = node.translation ?? DEFAULT_TRANSLATION;
+        node.rotation = node.rotation ?? [0, 0, 0, 1];
+        node.scale = node.scale ?? [1, 1, 1];
+        node.translation = node.translation ?? [0, 0, 0];
       }
     }
 
