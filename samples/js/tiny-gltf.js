@@ -389,13 +389,11 @@ export class TinyGltfWebGpu extends TinyGltf {
     gltf.gpuTextures = [];
     if (gltf.images?.length) {
       const imageTextures = [];
-      if (gltf.images) {
-        for (const [index, image] of Object.entries(gltf.images)) {
-          if (!image) {
-            continue;
-          }
-          imageTextures[index] = createGpuTextureFromImage(device, image);
+      for (const [index, image] of Object.entries(gltf.images)) {
+        if (!image) {
+          continue;
         }
+        imageTextures[index] = createGpuTextureFromImage(device, image);
       }
 
       const gpuSamplers = [];
