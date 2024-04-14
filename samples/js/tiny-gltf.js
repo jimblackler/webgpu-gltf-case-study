@@ -383,7 +383,8 @@ export class TinyGltfWebGpu extends TinyGltf {
     // Create WebGPU objects for all necessary buffers, images, and samplers
     gltf.gpuBuffers = [];
     for (const [index, bufferView] of Object.entries(gltf.bufferViews)) {
-      gltf.gpuBuffers[index] = createGpuBufferFromBufferView(device, bufferView, gltf.buffers[bufferView.buffer], bufferViewUsages[index]);
+      gltf.gpuBuffers[index] = createGpuBufferFromBufferView(device, bufferView,
+          gltf.buffers[bufferView.buffer], bufferViewUsages[index]);
     }
 
     gltf.gpuTextures = [];
