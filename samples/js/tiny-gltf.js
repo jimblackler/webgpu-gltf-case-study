@@ -8,10 +8,8 @@
 import {mat4} from '../node_modules/gl-matrix/esm/index.js';
 
 const GLB_MAGIC = 0x46546C67;
-const CHUNK_TYPE = {
-  JSON: 0x4E4F534A,
-  BIN: 0x004E4942,
-};
+const JSON_CHUNK_TYPE = 0x4E4F534A;
+const BIN_CHUNK_TYPE = 0x004E4942;
 
 const absUriRegEx = new RegExp(`^${window.location.protocol}`, 'i');
 const dataUriRegEx = /^data:/;
@@ -50,8 +48,7 @@ function setWorldMatrix(gltf, node, parentWorldMatrix) {
   mat4.transpose(node.normalMatrix, mat4.invert(node.normalMatrix, node.normalMatrix));
 
   for (const childIndex of node.children ?? []) {
-    const child = gltf.nodes[childIndex];
-    setWorldMatrix(gltf, child, node.worldMatrix);
+    setWorldMatrix(gltf, gltf.nodes[childIndex], node.worldMatrix);
   }
 }
 
@@ -94,13 +91,13 @@ export class TinyGltf {
       chunkOffset += chunkLength + 8;
     }
 
-    if (!chunks[CHUNK_TYPE.JSON]) {
+    if (!chunks[JSON_CHUNK_TYPE]) {
       throw new Error('File contained no json chunk.');
     }
 
     const decoder = new TextDecoder('utf-8');
-    const jsonString = decoder.decode(chunks[CHUNK_TYPE.JSON]);
-    return this.loadFromJson(JSON.parse(jsonString), baseUrl, chunks[CHUNK_TYPE.BIN]);
+    const jsonString = decoder.decode(chunks[JSON_CHUNK_TYPE]);
+    return this.loadFromJson(JSON.parse(jsonString), baseUrl, chunks[BIN_CHUNK_TYPE]);
   }
 
   async loadFromJson(json, baseUrl, binaryChunk = null) {
