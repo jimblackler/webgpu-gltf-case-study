@@ -27,6 +27,17 @@ const ShaderLocations = {
 
 const FRAME_BUFFER_SIZE = Float32Array.BYTES_PER_ELEMENT * 36;
 
+function createSolidColorTexture(device, r, g, b, a) {
+  const data = new Uint8Array([r * 255, g * 255, b * 255, a * 255]);
+  const texture = device.createTexture({
+    size: { width: 1, height: 1 },
+    format: 'rgba8unorm',
+    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
+  });
+  device.queue.writeTexture({ texture }, data, {}, { width: 1, height: 1 });
+  return texture;
+}
+
 export async function gltfDemo(startup_model) {
   const colorFormat = navigator.gpu?.getPreferredCanvasFormat?.() || 'bgra8unorm';
   const frameArrayBuffer = new ArrayBuffer(FRAME_BUFFER_SIZE);
@@ -137,7 +148,10 @@ export async function gltfDemo(startup_model) {
 
     let baseColor = gltf.gpuTextures[material.pbrMetallicRoughness?.baseColorTexture?.index];
     if (!baseColor) {
-      throw Error();
+      baseColor = {
+        texture: createSolidColorTexture(device, 1, 1, 1, 1),
+        sampler: gltf.gpuDefaultSampler,
+      };
     }
 
     materialGpuData.set(material, {
