@@ -134,11 +134,9 @@ export class TinyGltf {
       }
     }
 
-    if (json.samplers) {
-      for (const sampler of json.samplers) {
-        sampler.wrapS = sampler.wrapS ?? GL.REPEAT;
-        sampler.wrapT = sampler.wrapT ?? GL.REPEAT;
-      }
+    for (const sampler of json.samplers ?? []) {
+      sampler.wrapS = sampler.wrapS ?? GL.REPEAT;
+      sampler.wrapT = sampler.wrapT ?? GL.REPEAT;
     }
 
     // Resolve buffers and images first, since these are the only external resources that the file
