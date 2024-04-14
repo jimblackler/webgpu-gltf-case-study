@@ -30,11 +30,11 @@ const FRAME_BUFFER_SIZE = Float32Array.BYTES_PER_ELEMENT * 36;
 function createSolidColorTexture(device, r, g, b, a) {
   const data = new Uint8Array([r * 255, g * 255, b * 255, a * 255]);
   const texture = device.createTexture({
-    size: { width: 1, height: 1 },
+    size: {width: 1, height: 1},
     format: 'rgba8unorm',
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
   });
-  device.queue.writeTexture({ texture }, data, {}, { width: 1, height: 1 });
+  device.queue.writeTexture({texture}, data, {}, {width: 1, height: 1});
   return texture;
 }
 
@@ -187,8 +187,6 @@ export async function gltfDemo(startup_model) {
 
       for (const [attribName, accessorIndex] of Object.entries(primitive.attributes)) {
         const accessor = gltf.accessors[accessorIndex];
-        const bufferView = gltf.bufferViews[accessor.bufferView];
-
         const shaderLocation = ShaderLocations[attribName];
         if (shaderLocation === undefined) {
           continue;
@@ -201,7 +199,8 @@ export async function gltfDemo(startup_model) {
         let separate = buffer && (Math.abs(offset - buffer.attributes[0].offset) >= buffer.arrayStride);
         if (!buffer || separate) {
           buffer = {
-            arrayStride: bufferView.byteStride || TinyGltfWebGpu.packedArrayStrideForAccessor(accessor),
+            arrayStride: gltf.bufferViews[accessor.bufferView].byteStride ||
+                TinyGltfWebGpu.packedArrayStrideForAccessor(accessor),
             attributes: [],
           };
 
