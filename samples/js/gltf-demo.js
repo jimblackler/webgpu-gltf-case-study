@@ -13,7 +13,9 @@ const GltfModels = {
   sponza: `./sponza-optimized/Sponza.gltf`,
   mc_laren: `${GltfRootDir}/McLaren.glb`,
   porsche_gt3_rs: `${GltfRootDir}/porsche_gt3_rs.glb`,
-};
+  sea_keep_lonely_watcher: `${GltfRootDir}/sea_keep_lonely_watcher.glb`,
+  shiba: `${GltfRootDir}/shiba.glb`
+}
 
 // Shader locations and source are unchanged from the previous sample.
 const ShaderLocations = {
