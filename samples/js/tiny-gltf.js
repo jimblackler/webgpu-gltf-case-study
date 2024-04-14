@@ -76,11 +76,11 @@ export class TinyGltf {
     const version = headerView.getUint32(4, true);
     const length = headerView.getUint32(8, true);
 
-    if (magic != GLB_MAGIC) {
+    if (magic !== GLB_MAGIC) {
       throw new Error('Invalid magic string in binary header.');
     }
 
-    if (version != 2) {
+    if (version !== 2) {
       throw new Error('Incompatible version in binary header.');
     }
 
@@ -112,7 +112,7 @@ export class TinyGltf {
       throw new Error('Missing asset description.');
     }
 
-    if (json.asset.minVersion != '2.0' && json.asset.version != '2.0') {
+    if (json.asset.minVersion !== '2.0' && json.asset.version !== '2.0') {
       throw new Error('Incompatible asset version.');
     }
 
