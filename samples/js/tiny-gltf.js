@@ -345,19 +345,17 @@ export class TinyGltfWebGpu extends TinyGltf {
           gltf.buffers[bufferView.buffer], bufferViewUsages[index]);
     }
 
-      gltf.gpuTextures = [];
-    if (gltf.images?.length) {
-      const imageTextures = Object.values(gltf.images).map(image =>
-          createGpuTextureFromImage(device, image));
+    const imageTextures = Object.values(gltf.images ?? []).map(image =>
+        createGpuTextureFromImage(device, image));
 
-      gltf.gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
-          createGpuSamplerFromSampler(device, sampler));
+    gltf.gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
+        createGpuSamplerFromSampler(device, sampler));
 
-      gltf.gpuTextures = Object.values(gltf.textures ?? []).map(texture => ({
-        texture: imageTextures[texture.source],
-        sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
-      }));
-    }
+    gltf.gpuTextures = Object.values(gltf.textures ?? []).map(texture => ({
+      texture: imageTextures[texture.source],
+      sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
+    }));
+
     gltf.gpuDefaultSampler = this.defaultSampler;
 
     return gltf;
