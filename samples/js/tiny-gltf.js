@@ -70,17 +70,15 @@ function setWorldMatrix(gltf, node, parentWorldMatrix) {
     node.aabb.transform(node.worldMatrix);
   }
 
-  if (node.children) {
-    for (const childIndex of node.children) {
-      const child = gltf.nodes[childIndex];
-      setWorldMatrix(gltf, child, node.worldMatrix);
+  for (const childIndex of node.children ?? []) {
+    const child = gltf.nodes[childIndex];
+    setWorldMatrix(gltf, child, node.worldMatrix);
 
-      if (child.aabb) {
-        if (!node.aabb) {
-          node.aabb = new AABB(child.aabb);
-        } else {
-          node.aabb.union(child.aabb)
-        }
+    if (child.aabb) {
+      if (!node.aabb) {
+        node.aabb = new AABB(child.aabb);
+      } else {
+        node.aabb.union(child.aabb)
       }
     }
   }
