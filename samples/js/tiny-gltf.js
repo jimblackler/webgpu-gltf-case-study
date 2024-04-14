@@ -314,9 +314,6 @@ export class TinyGltfWebGpu extends TinyGltf {
     // Load the glTF file
     const gltf = await super.loadFromJson(json, baseUrl, binaryChunk);
 
-    // Create the WebGPU resources
-    const device = this.device;
-
     // Identify all the vertex and index buffers by iterating through all the primitives accessors
     // and marking the buffer views as vertex or index usage.
     // (There's technically a target attribute on the buffer view that's supposed to tell us what
@@ -340,14 +337,14 @@ export class TinyGltfWebGpu extends TinyGltf {
 
     // Create WebGPU objects for all necessary buffers, images, and samplers
     gltf.gpuBuffers = Object.values(gltf.bufferViews).map((bufferView, index) =>
-        createGpuBufferFromBufferView(device, bufferView,
+        createGpuBufferFromBufferView(this.device, bufferView,
             gltf.buffers[bufferView.buffer], bufferViewUsages[index]));
 
     const imageTextures = Object.values(gltf.images ?? []).map(image =>
-        createGpuTextureFromImage(device, image));
+        createGpuTextureFromImage(this.device, image));
 
     gltf.gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
-        createGpuSamplerFromSampler(device, sampler));
+        createGpuSamplerFromSampler(this.device, sampler));
 
     gltf.gpuTextures = Object.values(gltf.textures ?? []).map(texture => ({
       texture: imageTextures[texture.source],
