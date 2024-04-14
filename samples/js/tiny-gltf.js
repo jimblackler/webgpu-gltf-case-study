@@ -20,6 +20,7 @@ const DEFAULT_SCALE = [1, 1, 1];
 
 const absUriRegEx = new RegExp(`^${window.location.protocol}`, 'i');
 const dataUriRegEx = /^data:/;
+
 function resolveUri(uri, baseUrl) {
   if (!!uri.match(absUriRegEx) || !!uri.match(dataUriRegEx)) {
     return uri;
@@ -188,21 +189,18 @@ export class TinyGltf {
     }
 
     // Images
-    const images = [];
-    for (let index = 0; index < json.images?.length || 0; ++index) {
-      const image = json.images[index];
+    const images = await Promise.all(json.images.map(image => {
       if (image.uri) {
-        images[index] = await fetch(resolveUri(image.uri, baseUrl))
-            .then(async response => createImageBitmap(await response.blob()));
+        return fetch(resolveUri(image.uri, baseUrl))
+            .then(response => response.blob()).then(createImageBitmap)
       } else {
         const bufferView = json.bufferViews[image.bufferView];
-        const buffer = buffers[bufferView.buffer];
-        const blob = new Blob(
-            [new Uint8Array(buffer, bufferView.byteOffset, bufferView.byteLength)],
-            {type: image.mimeType});
-        images[index] = await createImageBitmap(blob)
+        return createImageBitmap(new Blob(
+            [new Uint8Array(
+                buffers[bufferView.buffer], bufferView.byteOffset, bufferView.byteLength)],
+            {type: image.mimeType}))
       }
-    }
+    }))
 
     // Compute a world transform for each node, starting at the root nodes and
     // working our way down.
