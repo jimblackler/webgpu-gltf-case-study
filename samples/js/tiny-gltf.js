@@ -187,17 +187,9 @@ export class TinyGltf {
       }
     }
 
-    // If the loader has been instructed to only load certain images (such as just baseColorTexture)
-    // then scan through all the materials first and gather the image IDs for only those images.
-    // (This feature really only makes sense for this specific set of samples.)
-    let activeImageSet;
-
     // Images
     const images = [];
     for (let index = 0; index < json.images?.length || 0; ++index) {
-      if (activeImageSet && !activeImageSet.has(index)) {
-        continue;
-      }
       const image = json.images[index];
       if (image.uri) {
         images[index] = await fetch(resolveUri(image.uri, baseUrl))
