@@ -345,18 +345,13 @@ export class TinyGltfWebGpu extends TinyGltf {
           gltf.buffers[bufferView.buffer], bufferViewUsages[index]);
     }
 
-    gltf.gpuTextures = [];
+      gltf.gpuTextures = [];
     if (gltf.images?.length) {
-      const imageTextures = [];
-      for (const [index, image] of Object.entries(gltf.images)) {
-        if (!image) {
-          continue;
-        }
-        imageTextures[index] = createGpuTextureFromImage(device, image);
-      }
+      const imageTextures = Object.values(gltf.images).map(image =>
+          createGpuTextureFromImage(device, image));
 
       gltf.gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
-        createGpuSamplerFromSampler(device, sampler));
+          createGpuSamplerFromSampler(device, sampler));
 
       gltf.gpuTextures = Object.values(gltf.textures ?? []).map(texture => ({
         texture: imageTextures[texture.source],
