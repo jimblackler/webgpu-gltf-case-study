@@ -186,17 +186,16 @@ export async function gltfDemo(startup_model) {
       let drawCount = 0;
 
       for (const [attribName, accessorIndex] of Object.entries(primitive.attributes)) {
-        const accessor = gltf.accessors[accessorIndex];
         const shaderLocation = ShaderLocations[attribName];
         if (shaderLocation === undefined) {
           continue;
         }
 
-        const offset = accessor.byteOffset;
-
+        const accessor = gltf.accessors[accessorIndex];
         let buffer = bufferLayout.get(accessor.bufferView);
 
-        let separate = buffer && Math.abs(offset - buffer.attributes[0].offset) >= buffer.arrayStride;
+        let separate = buffer &&
+            Math.abs(accessor.byteOffset - buffer.attributes[0].offset) >= buffer.arrayStride;
         if (!buffer || separate) {
           buffer = {
             arrayStride: gltf.bufferViews[accessor.bufferView].byteStride ||
@@ -207,17 +206,17 @@ export async function gltfDemo(startup_model) {
           bufferLayout.set(separate ? attribName : accessor.bufferView, buffer);
           gpuBuffers.set(buffer, {
             buffer: gltf.gpuBuffers[accessor.bufferView],
-            offset
+            offset: accessor.byteOffset
           });
         } else {
           const gpuBuffer = gpuBuffers.get(buffer);
-          gpuBuffer.offset = Math.min(gpuBuffer.offset, offset);
+          gpuBuffer.offset = Math.min(gpuBuffer.offset, accessor.byteOffset);
         }
 
         buffer.attributes.push({
           shaderLocation,
           format: TinyGltfWebGpu.gpuFormatForAccessor(accessor),
-          offset,
+          offset: accessor.byteOffset,
         });
 
         drawCount = accessor.count;
