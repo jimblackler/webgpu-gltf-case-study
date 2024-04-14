@@ -365,8 +365,7 @@ export class TinyGltfWebGpu extends TinyGltf {
     const bufferViewUsages = [];
 
     function markAccessorUsage(accessorIndex, usage) {
-      const accessor = gltf.accessors[accessorIndex];
-      bufferViewUsages[accessor.bufferView] |= usage;
+      bufferViewUsages[gltf.accessors[accessorIndex].bufferView] |= usage;
     }
 
     for (const mesh of gltf.meshes) {
