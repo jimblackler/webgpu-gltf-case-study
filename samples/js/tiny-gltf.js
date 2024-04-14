@@ -1,12 +1,11 @@
 /**
  * TinyGltf
- * Loads glTF 2.0 file, resolves buffer and image dependencies, and computes node world transforms and aabbs.
+ * Loads glTF 2.0 file, resolves buffer and image dependencies, and computes node world transforms.
  * This is a VERY simplified glTF loader that avoids doing too much work for you.
  * It should generally not be used outside of simple tutorials or examples.
  */
 
 import {mat4} from '../node_modules/gl-matrix/esm/index.js';
-import {AABB} from "./aabb.js";
 
 const GLB_MAGIC = 0x46546C67;
 const CHUNK_TYPE = {
@@ -54,34 +53,9 @@ function setWorldMatrix(gltf, node, parentWorldMatrix) {
   node.normalMatrix[14] = 0;
   mat4.transpose(node.normalMatrix, mat4.invert(node.normalMatrix, node.normalMatrix));
 
-  // If the node has a mesh, get the AABB for that mesh and transform it to get the node's AABB.
-  if ('mesh' in node) {
-    const mesh = gltf.meshes[node.mesh];
-
-    // Compute the mesh AABB if we haven't previously.
-    if (!mesh.aabb) {
-      mesh.aabb = new AABB();
-      for (const primitive of mesh.primitives) {
-        // The accessor has a min and max property
-        mesh.aabb.union(gltf.accessors[primitive.attributes.POSITION]);
-      }
-    }
-
-    node.aabb = new AABB(mesh.aabb);
-    node.aabb.transform(node.worldMatrix);
-  }
-
   for (const childIndex of node.children ?? []) {
     const child = gltf.nodes[childIndex];
     setWorldMatrix(gltf, child, node.worldMatrix);
-
-    if (child.aabb) {
-      if (!node.aabb) {
-        node.aabb = new AABB(child.aabb);
-      } else {
-        node.aabb.union(child.aabb)
-      }
-    }
   }
 }
 
@@ -203,14 +177,6 @@ export class TinyGltf {
       for (const nodeIndex of scene.nodes) {
         const node = json.nodes[nodeIndex];
         setWorldMatrix(json, node, mat4.create());
-
-        if (node.aabb) {
-          if (!scene.aabb) {
-            scene.aabb = new AABB(node.aabb);
-          } else {
-            scene.aabb.union(node.aabb)
-          }
-        }
       }
     }
     return json;

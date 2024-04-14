@@ -79,10 +79,8 @@ export async function gltfDemo(startup_model) {
   });
 
   const gltf = await new TinyGltfWebGpu(device).loadFromUrl(GltfModels[startup_model]);
-  const sceneAabb = gltf.scenes[gltf.scene].aabb;
 
-  orbitCamera(canvas, sceneAabb.center, sceneAabb.radius * 2.0,
-      sceneAabb.radius, sceneAabb.radius * 1.5, mtx => viewMatrix.set(mtx));
+  orbitCamera(canvas, vec3.fromValues(0, 0, 0), 1.5, mtx => viewMatrix.set(mtx));
 
   const pipelineGpuData = new Map();
   const shaderModules = new Map();
@@ -498,7 +496,7 @@ export async function gltfDemo(startup_model) {
     const aspect = canvas.width / canvas.height;
     // Using mat4.perspectiveZO instead of mat4.perpective because WebGPU's
     // normalized device coordinates Z range is [0, 1], instead of WebGL's [-1, 1]
-    mat4.perspectiveZO(projectionMatrix, Math.PI * 0.5, aspect, 0.01, sceneAabb.radius * 4.0);
+    mat4.perspectiveZO(projectionMatrix, Math.PI * 0.5, aspect, 0.01, 4.0);
     const commandEncoder = device.createCommandEncoder();
     colorAttachment.view = context.getCurrentTexture().createView();
     const renderPass = commandEncoder.beginRenderPass({
@@ -546,7 +544,7 @@ export async function gltfDemo(startup_model) {
   requestAnimationFrame(frameCallback);
 }
 
-function orbitCamera(element, target, maxDistance, minDistance, distance, callback) {
+function orbitCamera(element, target, distance, callback) {
   let orbitX = 0;
   let orbitY = 0;
 
@@ -590,8 +588,7 @@ function orbitCamera(element, target, maxDistance, minDistance, distance, callba
   element.addEventListener('mousewheel', event => {
     const wheelDeltaY = event.wheelDeltaY;
     if (wheelDeltaY) {
-      distance =
-          Math.min(Math.max(distance - wheelDeltaY * 0.005, minDistance), maxDistance);
+      distance -= wheelDeltaY * 0.005;
       broadcast();
     }
     event.preventDefault();
