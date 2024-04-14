@@ -158,13 +158,13 @@ export class TinyGltf {
       if (image.uri) {
         return fetch(resolveUri(image.uri, baseUrl))
             .then(response => response.blob()).then(createImageBitmap)
-      } else {
-        const bufferView = json.bufferViews[image.bufferView];
-        return createImageBitmap(new Blob(
-            [new Uint8Array(
-                json.buffers[bufferView.buffer], bufferView.byteOffset, bufferView.byteLength)],
-            {type: image.mimeType}))
       }
+      const bufferView = json.bufferViews[image.bufferView];
+      return createImageBitmap(new Blob(
+          [new Uint8Array(
+              json.buffers[bufferView.buffer], bufferView.byteOffset, bufferView.byteLength)],
+          {type: image.mimeType}))
+
     }))
 
     // Compute a world transform for each node, starting at the root nodes and
