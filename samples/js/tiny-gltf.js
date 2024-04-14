@@ -171,8 +171,7 @@ export class TinyGltf {
     // working our way down.
     for (const scene of Object.values(json.scenes)) {
       for (const nodeIndex of scene.nodes) {
-        const node = json.nodes[nodeIndex];
-        setWorldMatrix(json, node, mat4.create());
+        setWorldMatrix(json, json.nodes[nodeIndex], mat4.create());
       }
     }
     return json;
