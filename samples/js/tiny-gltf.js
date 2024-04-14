@@ -195,23 +195,22 @@ export class TinyGltf {
     let activeImageSet;
 
     // Images
-    const pendingImages = [];
+    const images = [];
     for (let index = 0; index < json.images?.length || 0; ++index) {
       if (activeImageSet && !activeImageSet.has(index)) {
         continue;
       }
       const image = json.images[index];
       if (image.uri) {
-        pendingImages[index] = fetch(resolveUri(image.uri, baseUrl)).then(async (response) => {
-          return createImageBitmap(await response.blob());
-        });
+        images[index] = await fetch(resolveUri(image.uri, baseUrl))
+            .then(async response => createImageBitmap(await response.blob()));
       } else {
         const bufferView = json.bufferViews[image.bufferView];
         const buffer = buffers[bufferView.buffer];
         const blob = new Blob(
             [new Uint8Array(buffer, bufferView.byteOffset, bufferView.byteLength)],
             {type: image.mimeType});
-        pendingImages[index] = createImageBitmap(blob)
+        images[index] = await createImageBitmap(blob)
       }
     }
 
@@ -232,9 +231,8 @@ export class TinyGltf {
       }
     }
 
-    // Replace the resolved resources in the JSON structure.
     json.buffers = buffers;
-    json.images = await Promise.all(pendingImages);
+    json.images = images;
 
     return json;
   }
