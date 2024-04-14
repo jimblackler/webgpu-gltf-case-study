@@ -196,7 +196,7 @@ export async function gltfDemo(startup_model) {
 
         let buffer = bufferLayout.get(accessor.bufferView);
 
-        let separate = buffer && (Math.abs(offset - buffer.attributes[0].offset) >= buffer.arrayStride);
+        let separate = buffer && Math.abs(offset - buffer.attributes[0].offset) >= buffer.arrayStride;
         if (!buffer || separate) {
           buffer = {
             arrayStride: gltf.bufferViews[accessor.bufferView].byteStride ||
