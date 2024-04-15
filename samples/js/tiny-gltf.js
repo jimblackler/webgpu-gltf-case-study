@@ -11,16 +11,6 @@ const GLB_MAGIC = 0x46546C67;
 const JSON_CHUNK_TYPE = 0x4E4F534A;
 const BIN_CHUNK_TYPE = 0x004E4942;
 
-const absUriRegEx = new RegExp(`^${window.location.protocol}`, 'i');
-const dataUriRegEx = /^data:/;
-
-function resolveUri(uri, baseUrl) {
-  if (!!uri.match(absUriRegEx) || !!uri.match(dataUriRegEx)) {
-    return uri;
-  }
-  return baseUrl + uri;
-}
-
 function setWorldMatrix(gltf, node, parentWorldMatrix) {
   // Don't recompute nodes we've already visited.
   if (node.worldMatrix) {
@@ -142,15 +132,15 @@ export class TinyGltf {
     // Images will be exposed as ImageBitmaps.
 
     // Buffers
-    json.buffers = binaryChunk ? [binaryChunk] :
-        await Promise.all(json.buffers.map(buffer =>
-            fetch(resolveUri(buffer.uri, baseUrl)).then(response => response.arrayBuffer())));
+    if (!binaryChunk) {
+      throw Error('Only handle binary chunks');
+    }
+    json.buffers = [binaryChunk];
 
     // Images
     json.images = await Promise.all(json.images.map(image => {
       if (image.uri) {
-        return fetch(resolveUri(image.uri, baseUrl))
-            .then(response => response.blob()).then(createImageBitmap)
+        throw Error('Image URI fetching not supported');
       }
       const bufferView = json.bufferViews[image.bufferView];
       return createImageBitmap(new Blob(
