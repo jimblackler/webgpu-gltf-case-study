@@ -467,7 +467,6 @@ export async function gltfDemo(startup_model) {
   const colorAttachment = {
     // Appropriate target will be populated in onFrame
     view: undefined,
-    resolveTarget: undefined,
 
     clearValue: {r: 0.0, g: 0.0, b: 0.2, a: 1.0},
     loadOp: 'clear',
