@@ -143,10 +143,8 @@ export class TinyGltf {
 
     // Buffers
     json.buffers = binaryChunk ? [binaryChunk] :
-        await Promise.all(json.buffers.map(buffer => {
-          const uri = resolveUri(buffer.uri, baseUrl);
-          return fetch(uri).then(response => response.arrayBuffer());
-        }));
+        await Promise.all(json.buffers.map(buffer =>
+            fetch(resolveUri(buffer.uri, baseUrl)).then(response => response.arrayBuffer())));
 
     // Images
     json.images = await Promise.all(json.images.map(image => {
