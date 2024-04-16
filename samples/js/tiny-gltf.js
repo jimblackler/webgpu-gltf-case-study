@@ -50,7 +50,6 @@ export function getWorldMatrixMap(gltf) {
 }
 
 export async function loadFromUrl(device, url) {
-  const defaultSampler = createGpuSamplerFromSampler(device);
   const response = await fetch(url);
 
   if (!url.endsWith(".glb")) {
@@ -152,6 +151,7 @@ export async function loadFromUrl(device, url) {
   const gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
       createGpuSamplerFromSampler(device, sampler));
 
+  const gpuDefaultSampler = createGpuSamplerFromSampler(device, {name: "glTF default sampler"});
   return {
     gltf,
     gpuBuffers: Object.values(gltf.bufferViews).map((bufferView, index) =>
@@ -159,9 +159,9 @@ export async function loadFromUrl(device, url) {
             chunks[BIN_CHUNK_TYPE], bufferViewUsages[index])),
     gpuTextures: Object.values(gltf.textures ?? []).map(texture => ({
       texture: imageTextures[texture.source],
-      sampler: texture.sampler ? gpuSamplers[texture.sampler] : defaultSampler
+      sampler: texture.sampler ? gpuSamplers[texture.sampler] : gpuDefaultSampler
     })),
-    gpuDefaultSampler: defaultSampler
+    gpuDefaultSampler
   }
 }
 
@@ -207,7 +207,7 @@ function createGpuBufferFromBufferView(device, bufferView, buffer, usage) {
   return gpuBuffer;
 }
 
-function createGpuSamplerFromSampler(device, sampler = {name: "glTF default sampler"}) {
+function createGpuSamplerFromSampler(device, sampler) {
   const descriptor = {
     label: sampler.name,
     addressModeU: gpuAddressModeForWrap(sampler.wrapS),
