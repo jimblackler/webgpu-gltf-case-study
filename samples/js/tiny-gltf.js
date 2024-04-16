@@ -50,7 +50,6 @@ export class TinyGltf {
 
   async loadFromUrl(url) {
     const i = url.lastIndexOf('/');
-    const baseUrl = (i !== 0) ? url.substring(0, i + 1) : '';
     const response = await fetch(url);
 
     if (!url.endsWith('.glb')) {
@@ -89,10 +88,6 @@ export class TinyGltf {
     const jsonString = decoder.decode(chunks[JSON_CHUNK_TYPE]);
     const json = JSON.parse(jsonString);
     const binaryChunk = chunks[BIN_CHUNK_TYPE];
-
-    if (!baseUrl) {
-      throw new Error('baseUrl must be specified.');
-    }
 
     if (!json.asset) {
       throw new Error('Missing asset description.');
