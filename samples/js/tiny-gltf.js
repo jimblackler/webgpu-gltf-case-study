@@ -5,7 +5,7 @@
  * It should generally not be used outside of simple tutorials or examples.
  */
 
-import {mat4} from '../node_modules/gl-matrix/esm/index.js';
+import {mat4} from "../node_modules/gl-matrix/esm/index.js";
 
 const GLB_MAGIC = 0x46546C67;
 const JSON_CHUNK_TYPE = 0x4E4F534A;
@@ -49,11 +49,11 @@ export class TinyGltf {
   }
 
   async loadFromUrl(url) {
-    const i = url.lastIndexOf('/');
+    const i = url.lastIndexOf("/");
     const response = await fetch(url);
 
-    if (!url.endsWith('.glb')) {
-      throw Error('Only loads glb')
+    if (!url.endsWith(".glb")) {
+      throw Error("Only loads glb")
     }
     const arrayBuffer = await response.arrayBuffer();
 
@@ -63,11 +63,11 @@ export class TinyGltf {
     const length = headerView.getUint32(8, true);
 
     if (magic !== GLB_MAGIC) {
-      throw new Error('Invalid magic string in binary header.');
+      throw new Error("Invalid magic string in binary header.");
     }
 
     if (version !== 2) {
-      throw new Error('Incompatible version in binary header.');
+      throw new Error("Incompatible version in binary header.");
     }
 
     let chunks = {};
@@ -81,18 +81,18 @@ export class TinyGltf {
     }
 
     if (!chunks[JSON_CHUNK_TYPE]) {
-      throw new Error('File contained no json chunk.');
+      throw new Error("File contained no json chunk.");
     }
 
-    const decoder = new TextDecoder('utf-8');
+    const decoder = new TextDecoder("utf-8");
     const jsonString = decoder.decode(chunks[JSON_CHUNK_TYPE]);
     const gltf = JSON.parse(jsonString);
     if (!gltf.asset) {
-      throw new Error('Missing asset description.');
+      throw new Error("Missing asset description.");
     }
 
-    if (gltf.asset.minVersion !== '2.0' && gltf.asset.version !== '2.0') {
-      throw new Error('Incompatible asset version.');
+    if (gltf.asset.minVersion !== "2.0" && gltf.asset.version !== "2.0") {
+      throw new Error("Incompatible asset version.");
     }
 
     // Resolve defaults for as many properties as we can.
@@ -124,13 +124,13 @@ export class TinyGltf {
     gltf.buffers = [chunks[BIN_CHUNK_TYPE]];
 
     if (!gltf.buffers) {
-      throw Error('Only handle binary chunks');
+      throw Error("Only handle binary chunks");
     }
 
     // Images
     gltf.images = await Promise.all(gltf.images.map(image => {
       if (image.uri) {
-        throw Error('Image URI fetching not supported');
+        throw Error("Image URI fetching not supported");
       }
       const bufferView = gltf.bufferViews[image.bufferView];
       return createImageBitmap(new Blob(
@@ -160,7 +160,7 @@ export class TinyGltf {
 
     for (const mesh of gltf.meshes) {
       for (const primitive of mesh.primitives) {
-        if ('indices' in primitive) {
+        if ("indices" in primitive) {
           markAccessorUsage(primitive.indices, GPUBufferUsage.INDEX);
         }
         for (const attribute of Object.values(primitive.attributes)) {
@@ -191,13 +191,13 @@ export class TinyGltf {
 
   static componentCountForType(type) {
     switch (type) {
-      case 'SCALAR':
+      case "SCALAR":
         return 1;
-      case 'VEC2':
+      case "VEC2":
         return 2;
-      case 'VEC3':
+      case "VEC3":
         return 3;
-      case 'VEC4':
+      case "VEC4":
         return 4;
       default:
         return 0;
@@ -220,11 +220,11 @@ const GL = WebGLRenderingContext;
 function gpuAddressModeForWrap(wrap) {
   switch (wrap) {
     case GL.CLAMP_TO_EDGE:
-      return 'clamp-to-edge';
+      return "clamp-to-edge";
     case GL.MIRRORED_REPEAT:
-      return 'mirror-repeat';
+      return "mirror-repeat";
     default:
-      return 'repeat';
+      return "repeat";
   }
 }
 
@@ -249,7 +249,7 @@ function createGpuBufferFromBufferView(device, bufferView, buffer, usage) {
   return gpuBuffer;
 }
 
-function createGpuSamplerFromSampler(device, sampler = {name: 'glTF default sampler'}) {
+function createGpuSamplerFromSampler(device, sampler = {name: "glTF default sampler"}) {
   const descriptor = {
     label: sampler.name,
     addressModeU: gpuAddressModeForWrap(sampler.wrapS),
@@ -257,7 +257,7 @@ function createGpuSamplerFromSampler(device, sampler = {name: 'glTF default samp
   };
 
   if (!sampler.magFilter || sampler.magFilter == GL.LINEAR) {
-    descriptor.magFilter = 'linear';
+    descriptor.magFilter = "linear";
   }
 
   switch (sampler.minFilter) {
@@ -265,15 +265,15 @@ function createGpuSamplerFromSampler(device, sampler = {name: 'glTF default samp
       break;
     case GL.LINEAR:
     case GL.LINEAR_MIPMAP_NEAREST:
-      descriptor.minFilter = 'linear';
+      descriptor.minFilter = "linear";
       break;
     case GL.NEAREST_MIPMAP_LINEAR:
-      descriptor.mipmapFilter = 'linear';
+      descriptor.mipmapFilter = "linear";
       break;
     case GL.LINEAR_MIPMAP_LINEAR:
     default:
-      descriptor.minFilter = 'linear';
-      descriptor.mipmapFilter = 'linear';
+      descriptor.minFilter = "linear";
+      descriptor.mipmapFilter = "linear";
       break;
   }
 
@@ -284,7 +284,7 @@ function createGpuTextureFromImage(device, source) {
   const size = {width: source.width, height: source.height};
   const texture = device.createTexture({
     size: size,
-    format: 'rgba8unorm',
+    format: "rgba8unorm",
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST |
         GPUTextureUsage.RENDER_ATTACHMENT,
     mipLevelCount: 1

@@ -1,11 +1,11 @@
-import {mat4, vec3} from '../node_modules/gl-matrix/esm/index.js';
-import {TinyGltf} from './tiny-gltf.js'
-import {wgsl} from '../node_modules/wgsl-preprocessor/wgsl-preprocessor.js'
+import {mat4, vec3} from "../node_modules/gl-matrix/esm/index.js";
+import {TinyGltf} from "./tiny-gltf.js"
+import {wgsl} from "../node_modules/wgsl-preprocessor/wgsl-preprocessor.js"
 
 // To make it easier to reference the WebGL enums that glTF uses.
 const GL = WebGLRenderingContext;
 
-const GltfRootDir = './glTF-Sample-Models/2.0';
+const GltfRootDir = "./glTF-Sample-Models/2.0";
 
 const GltfModels = {
   antique_camera: `${GltfRootDir}/AntiqueCamera/glTF/AntiqueCamera.gltf`,
@@ -34,7 +34,7 @@ function createSolidColorTexture(device, r, g, b, a) {
   const data = new Uint8Array([r * 255, g * 255, b * 255, a * 255]);
   const texture = device.createTexture({
     size: {width: 1, height: 1},
-    format: 'rgba8unorm',
+    format: "rgba8unorm",
     usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
   });
   device.queue.writeTexture({texture}, data, {}, {width: 1, height: 1});
@@ -65,9 +65,9 @@ function packedArrayStrideForAccessor(accessor) {
 }
 
 function gpuFormatForAccessor(accessor) {
-  const norm = accessor.normalized ? 'norm' : 'int';
+  const norm = accessor.normalized ? "norm" : "int";
   const count = TinyGltf.componentCountForType(accessor.type);
-  const x = count > 1 ? `x${count}` : '';
+  const x = count > 1 ? `x${count}` : "";
   switch (accessor.componentType) {
     case GL.BYTE:
       return `s${norm}8${x}`;
@@ -87,44 +87,44 @@ function gpuFormatForAccessor(accessor) {
 function gpuPrimitiveTopologyForMode(mode) {
   switch (mode) {
     case GL.TRIANGLES:
-      return 'triangle-list';
+      return "triangle-list";
     case GL.TRIANGLE_STRIP:
-      return 'triangle-strip';
+      return "triangle-strip";
     case GL.LINES:
-      return 'line-list';
+      return "line-list";
     case GL.LINE_STRIP:
-      return 'line-strip';
+      return "line-strip";
     case GL.POINTS:
-      return 'point-list';
+      return "point-list";
   }
 }
 
 function gpuIndexFormatForComponentType(componentType) {
   switch (componentType) {
     case GL.UNSIGNED_SHORT:
-      return 'uint16';
+      return "uint16";
     case GL.UNSIGNED_INT:
-      return 'uint32';
+      return "uint32";
     default:
       return 0;
   }
 }
 
 export async function gltfDemo(startup_model) {
-  const colorFormat = navigator.gpu?.getPreferredCanvasFormat?.() || 'bgra8unorm';
+  const colorFormat = navigator.gpu?.getPreferredCanvasFormat?.() || "bgra8unorm";
   const frameArrayBuffer = new ArrayBuffer(FRAME_BUFFER_SIZE);
   const projectionMatrix = new Float32Array(frameArrayBuffer, 0, 16);
   const viewMatrix = new Float32Array(frameArrayBuffer, 16 * Float32Array.BYTES_PER_ELEMENT, 16);
-  const canvas = document.querySelector('.webgpu-canvas');
+  const canvas = document.querySelector(".webgpu-canvas");
 
-  const context = canvas.getContext('webgpu');
+  const context = canvas.getContext("webgpu");
 
   const adapter = await navigator.gpu.requestAdapter();
   const device = await adapter.requestDevice();
   context.configure({
     device: device,
     format: colorFormat,
-    alphaMode: 'opaque',
+    alphaMode: "opaque",
   });
 
   const frameUniformBuffer = device.createBuffer({
@@ -162,7 +162,7 @@ export async function gltfDemo(startup_model) {
     entries: [{
       binding: 0, // Node uniforms
       visibility: GPUShaderStage.VERTEX,
-      buffer: {type: 'read-only-storage'},
+      buffer: {type: "read-only-storage"},
     }],
   });
 
@@ -324,7 +324,7 @@ export async function gltfDemo(startup_model) {
         instances: primitiveInstances
       };
 
-      if ('indices' in primitive) {
+      if ("indices" in primitive) {
         const accessor = gltf.accessors[primitive.indices];
         gpuPrimitive.indexBuffer = gltf.gpuBuffers[accessor.bufferView];
         gpuPrimitive.indexOffset = accessor.byteOffset;
@@ -344,8 +344,8 @@ export async function gltfDemo(startup_model) {
         alphaMode: material.alphaMode,
         // These values specifically will be passed to shader module creation.
         shaderArgs: {
-          hasTexcoord: 'TEXCOORD_0' in primitive.attributes,
-          useAlphaCutoff: material.alphaMode == 'MASK',
+          hasTexcoord: "TEXCOORD_0" in primitive.attributes,
+          useAlphaCutoff: material.alphaMode == "MASK",
         },
       }).materialPrimitives;
 
@@ -459,7 +459,7 @@ export async function gltfDemo(startup_model) {
             `;
 
       shaderModule = device.createShaderModule({
-        label: 'Simple glTF rendering shader module',
+        label: "Simple glTF rendering shader module",
         code,
       });
       shaderModules.set(key, shaderModule);
@@ -481,9 +481,9 @@ export async function gltfDemo(startup_model) {
 
     const gpuPipeline = {
       pipeline: device.createRenderPipeline({
-        label: 'glTF renderer pipeline',
+        label: "glTF renderer pipeline",
         layout: device.createPipelineLayout({
-          label: 'glTF Pipeline Layout',
+          label: "glTF Pipeline Layout",
           bindGroupLayouts: [
             frameBindGroupLayout,
             instanceBindGroupLayout,
@@ -492,37 +492,37 @@ export async function gltfDemo(startup_model) {
         }),
         vertex: {
           module,
-          entryPoint: 'vertexMain',
+          entryPoint: "vertexMain",
           buffers: args.buffers,
         },
         primitive: {
           topology: args.topology,
           // Make sure to apply the appropriate culling mode
-          cullMode: args.doubleSided ? 'none' : 'back',
+          cullMode: args.doubleSided ? "none" : "back",
         },
         multisample: {
           count: 1,
         },
         depthStencil: {
-          format: 'depth24plus',
+          format: "depth24plus",
           depthWriteEnabled: true,
-          depthCompare: 'less',
+          depthCompare: "less",
         },
         fragment: {
           module,
-          entryPoint: 'fragmentMain',
+          entryPoint: "fragmentMain",
           targets: [{
             format: colorFormat,
             // Apply the necessary blending
-            blend: args.alphaMode === 'BLEND' ? {
+            blend: args.alphaMode === "BLEND" ? {
               color: {
-                srcFactor: 'src-alpha',
-                dstFactor: 'one-minus-src-alpha',
+                srcFactor: "src-alpha",
+                dstFactor: "one-minus-src-alpha",
               },
               alpha: {
                 // This just prevents the canvas from having alpha "holes" in it.
-                srcFactor: 'one',
-                dstFactor: 'one',
+                srcFactor: "one",
+                dstFactor: "one",
               }
             } : undefined
           }],
@@ -541,20 +541,20 @@ export async function gltfDemo(startup_model) {
     view: undefined,
 
     clearValue: {r: 0.0, g: 0.0, b: 0.2, a: 1.0},
-    loadOp: 'clear',
-    storeOp: 'store',
+    loadOp: "clear",
+    storeOp: "store",
   };
 
   const depthStencilAttachment = {
     view: device.createTexture({
       size: {width: canvas.width, height: canvas.height},
       sampleCount: 1,
-      format: 'depth24plus',
+      format: "depth24plus",
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     }).createView(),
     depthClearValue: 1.0,
-    depthLoadOp: 'clear',
-    depthStoreOp: 'discard',
+    depthLoadOp: "clear",
+    depthStoreOp: "discard",
   };
 
   function frameCallback() {
@@ -645,16 +645,16 @@ function orbitCamera(element, target, distance, callback) {
   }
 
   function pointerUp(event) {
-    element.removeEventListener('pointermove', pointerMove);
-    element.removeEventListener('pointerup', pointerUp);
+    element.removeEventListener("pointermove", pointerMove);
+    element.removeEventListener("pointerup", pointerUp);
   }
 
-  element.addEventListener('pointerdown', event => {
-    element.addEventListener('pointermove', pointerMove);
-    element.addEventListener('pointerup', pointerUp);
+  element.addEventListener("pointerdown", event => {
+    element.addEventListener("pointermove", pointerMove);
+    element.addEventListener("pointerup", pointerUp);
   });
 
-  element.addEventListener('mousewheel', event => {
+  element.addEventListener("mousewheel", event => {
     const wheelDeltaY = event.wheelDeltaY;
     if (wheelDeltaY) {
       distance -= wheelDeltaY * 0.005;
