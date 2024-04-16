@@ -86,26 +86,26 @@ export class TinyGltf {
 
     const decoder = new TextDecoder('utf-8');
     const jsonString = decoder.decode(chunks[JSON_CHUNK_TYPE]);
-    const json = JSON.parse(jsonString);
-    if (!json.asset) {
+    const gltf = JSON.parse(jsonString);
+    if (!gltf.asset) {
       throw new Error('Missing asset description.');
     }
 
-    if (json.asset.minVersion !== '2.0' && json.asset.version !== '2.0') {
+    if (gltf.asset.minVersion !== '2.0' && gltf.asset.version !== '2.0') {
       throw new Error('Incompatible asset version.');
     }
 
     // Resolve defaults for as many properties as we can.
-    for (const accessor of json.accessors) {
+    for (const accessor of gltf.accessors) {
       accessor.byteOffset = accessor.byteOffset ?? 0;
       accessor.normalized = accessor.normalized ?? false;
     }
 
-    for (const bufferView of json.bufferViews) {
+    for (const bufferView of gltf.bufferViews) {
       bufferView.byteOffset = bufferView.byteOffset ?? 0;
     }
 
-    for (const node of json.nodes) {
+    for (const node of gltf.nodes) {
       if (!node.matrix) {
         node.rotation = node.rotation ?? [0, 0, 0, 1];
         node.scale = node.scale ?? [1, 1, 1];
@@ -113,7 +113,7 @@ export class TinyGltf {
       }
     }
 
-    for (const sampler of json.samplers ?? []) {
+    for (const sampler of gltf.samplers ?? []) {
       sampler.wrapS = sampler.wrapS ?? GL.REPEAT;
       sampler.wrapT = sampler.wrapT ?? GL.REPEAT;
     }
@@ -121,30 +121,30 @@ export class TinyGltf {
     // Buffers will be exposed as ArrayBuffers.
     // Images will be exposed as ImageBitmaps.
 
-    json.buffers = [chunks[BIN_CHUNK_TYPE]];
+    gltf.buffers = [chunks[BIN_CHUNK_TYPE]];
 
-    if (!json.buffers) {
+    if (!gltf.buffers) {
       throw Error('Only handle binary chunks');
     }
 
     // Images
-    json.images = await Promise.all(json.images.map(image => {
+    gltf.images = await Promise.all(gltf.images.map(image => {
       if (image.uri) {
         throw Error('Image URI fetching not supported');
       }
-      const bufferView = json.bufferViews[image.bufferView];
+      const bufferView = gltf.bufferViews[image.bufferView];
       return createImageBitmap(new Blob(
           [new Uint8Array(
-              json.buffers[bufferView.buffer], bufferView.byteOffset, bufferView.byteLength)],
+              gltf.buffers[bufferView.buffer], bufferView.byteOffset, bufferView.byteLength)],
           {type: image.mimeType}))
 
     }))
 
     // Compute a world transform for each node, starting at the root nodes and
     // working our way down.
-    for (const scene of Object.values(json.scenes)) {
+    for (const scene of Object.values(gltf.scenes)) {
       for (const nodeIndex of scene.nodes) {
-        setWorldMatrix(json, json.nodes[nodeIndex], mat4.create());
+        setWorldMatrix(gltf, gltf.nodes[nodeIndex], mat4.create());
       }
     }
 
@@ -155,10 +155,10 @@ export class TinyGltf {
     const bufferViewUsages = [];
 
     function markAccessorUsage(accessorIndex, usage) {
-      bufferViewUsages[json.accessors[accessorIndex].bufferView] |= usage;
+      bufferViewUsages[gltf.accessors[accessorIndex].bufferView] |= usage;
     }
 
-    for (const mesh of json.meshes) {
+    for (const mesh of gltf.meshes) {
       for (const primitive of mesh.primitives) {
         if ('indices' in primitive) {
           markAccessorUsage(primitive.indices, GPUBufferUsage.INDEX);
@@ -170,23 +170,23 @@ export class TinyGltf {
     }
 
     // Create WebGPU objects for all necessary buffers, images, and samplers
-    json.gpuBuffers = Object.values(json.bufferViews).map((bufferView, index) =>
+    gltf.gpuBuffers = Object.values(gltf.bufferViews).map((bufferView, index) =>
         createGpuBufferFromBufferView(this.device, bufferView,
-            json.buffers[bufferView.buffer], bufferViewUsages[index]));
+            gltf.buffers[bufferView.buffer], bufferViewUsages[index]));
 
-    const imageTextures = Object.values(json.images ?? []).map(image =>
+    const imageTextures = Object.values(gltf.images ?? []).map(image =>
         createGpuTextureFromImage(this.device, image));
 
-    json.gpuSamplers = Object.values(json.samplers ?? []).map(sampler =>
+    gltf.gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
         createGpuSamplerFromSampler(this.device, sampler));
 
-    json.gpuTextures = Object.values(json.textures ?? []).map(texture => ({
+    gltf.gpuTextures = Object.values(gltf.textures ?? []).map(texture => ({
       texture: imageTextures[texture.source],
       sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
     }));
 
-    json.gpuDefaultSampler = this.defaultSampler;
-    return json;
+    gltf.gpuDefaultSampler = this.defaultSampler;
+    return gltf;
   }
 
   static componentCountForType(type) {
