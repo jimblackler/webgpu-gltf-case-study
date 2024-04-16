@@ -87,8 +87,6 @@ export class TinyGltf {
     const decoder = new TextDecoder('utf-8');
     const jsonString = decoder.decode(chunks[JSON_CHUNK_TYPE]);
     const json = JSON.parse(jsonString);
-    const binaryChunk = chunks[BIN_CHUNK_TYPE];
-
     if (!json.asset) {
       throw new Error('Missing asset description.');
     }
@@ -123,10 +121,11 @@ export class TinyGltf {
     // Buffers will be exposed as ArrayBuffers.
     // Images will be exposed as ImageBitmaps.
 
-    if (!binaryChunk) {
+    json.buffers = [chunks[BIN_CHUNK_TYPE]];
+
+    if (!json.buffers) {
       throw Error('Only handle binary chunks');
     }
-    json.buffers = [binaryChunk];
 
     // Images
     json.images = await Promise.all(json.images.map(image => {
