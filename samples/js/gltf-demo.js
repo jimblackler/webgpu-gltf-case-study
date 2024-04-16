@@ -110,6 +110,18 @@ function gpuIndexFormatForComponentType(componentType) {
   }
 }
 
+function getNormalMatrixMap(worldMatrixMap) {
+  return new Map(worldMatrixMap.entries().map(([node, worldMatrix]) => {
+        const normalMatrix = mat4.clone(worldMatrix);
+        normalMatrix[12] = 0;
+        normalMatrix[13] = 0;
+        normalMatrix[14] = 0;
+        mat4.transpose(normalMatrix, mat4.invert(normalMatrix, normalMatrix));
+        return [node, normalMatrix];
+      }
+  ));
+}
+
 export async function gltfDemo(startup_model) {
   const colorFormat = navigator.gpu?.getPreferredCanvasFormat?.() || "bgra8unorm";
   const frameArrayBuffer = new ArrayBuffer(FRAME_BUFFER_SIZE);
@@ -152,6 +164,8 @@ export async function gltfDemo(startup_model) {
 
   const {gltf, gpuBuffers, gpuTextures, gpuDefaultSampler, worldMatrixMap} =
       await new TinyGltf(device).loadFromUrl(GltfModels[startup_model]);
+
+  const normalMap = getNormalMatrixMap(worldMatrixMap);
 
   orbitCamera(canvas, vec3.fromValues(0, 0, 0), 1.5, mtx => viewMatrix.set(mtx));
 
@@ -315,7 +329,7 @@ export async function gltfDemo(startup_model) {
       instances.forEach((instance, i) => {
         const idx = primitiveInstances.offset + i;
         primitiveInstances.arrayBuffer.set(worldMatrixMap.get(instance), idx * 32);
-        primitiveInstances.arrayBuffer.set(instance.normalMatrix, idx * 32 + 16);
+        primitiveInstances.arrayBuffer.set(normalMap.get(instance), idx * 32 + 16);
       });
 
       primitiveInstances.offset += instances.length;

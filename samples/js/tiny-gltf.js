@@ -34,13 +34,6 @@ function setWorldMatrix(gltf, node, parentWorldMatrix, map) {
   mat4.multiply(worldMatrix, parentWorldMatrix, worldMatrix);
   map.set(node, worldMatrix);
 
-  // Calculate the normal matrix
-  node.normalMatrix = mat4.clone(worldMatrix);
-  node.normalMatrix[12] = 0;
-  node.normalMatrix[13] = 0;
-  node.normalMatrix[14] = 0;
-  mat4.transpose(node.normalMatrix, mat4.invert(node.normalMatrix, node.normalMatrix));
-
   for (const childIndex of node.children ?? []) {
     setWorldMatrix(gltf, gltf.nodes[childIndex], worldMatrix, map);
   }
