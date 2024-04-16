@@ -11,36 +11,38 @@ const GLB_MAGIC = 0x46546C67;
 const JSON_CHUNK_TYPE = 0x4E4F534A;
 const BIN_CHUNK_TYPE = 0x004E4942;
 
-function setWorldMatrix(gltf, node, parentWorldMatrix) {
+function setWorldMatrix(gltf, node, parentWorldMatrix, map) {
   // Don't recompute nodes we've already visited.
-  if (node.worldMatrix) {
+  if (map.has(node)) {
     return;
   }
 
+  let worldMatrix;
   if (node.matrix) {
-    node.worldMatrix = mat4.clone(node.matrix);
+    worldMatrix = mat4.clone(node.matrix);
   } else {
-    node.worldMatrix = mat4.create();
+    worldMatrix = mat4.create();
     if (node.rotation || node.position || node.translation) {
       mat4.fromRotationTranslationScale(
-          node.worldMatrix,
+          worldMatrix,
           node.rotation,
           node.translation,
           node.scale);
     }
   }
 
-  mat4.multiply(node.worldMatrix, parentWorldMatrix, node.worldMatrix);
+  mat4.multiply(worldMatrix, parentWorldMatrix, worldMatrix);
+  map.set(node, worldMatrix);
 
   // Calculate the normal matrix
-  node.normalMatrix = mat4.clone(node.worldMatrix);
+  node.normalMatrix = mat4.clone(worldMatrix);
   node.normalMatrix[12] = 0;
   node.normalMatrix[13] = 0;
   node.normalMatrix[14] = 0;
   mat4.transpose(node.normalMatrix, mat4.invert(node.normalMatrix, node.normalMatrix));
 
   for (const childIndex of node.children ?? []) {
-    setWorldMatrix(gltf, gltf.nodes[childIndex], node.worldMatrix);
+    setWorldMatrix(gltf, gltf.nodes[childIndex], worldMatrix, map);
   }
 }
 
@@ -123,9 +125,10 @@ export class TinyGltf {
 
     // Compute a world transform for each node, starting at the root nodes and
     // working our way down.
+    const map = new Map();
     for (const scene of Object.values(gltf.scenes)) {
       for (const nodeIndex of scene.nodes) {
-        setWorldMatrix(gltf, gltf.nodes[nodeIndex], mat4.create());
+        setWorldMatrix(gltf, gltf.nodes[nodeIndex], mat4.create(), map);
       }
     }
 
@@ -173,7 +176,8 @@ export class TinyGltf {
         texture: imageTextures[texture.source],
         sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
       })),
-      gpuDefaultSampler: this.defaultSampler
+      gpuDefaultSampler: this.defaultSampler,
+      worldMatrixMap: map
     }
   }
 

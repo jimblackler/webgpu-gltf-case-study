@@ -150,7 +150,7 @@ export async function gltfDemo(startup_model) {
     }],
   });
 
-  const {gltf, gpuBuffers, gpuTextures, gpuDefaultSampler} =
+  const {gltf, gpuBuffers, gpuTextures, gpuDefaultSampler, worldMatrixMap} =
       await new TinyGltf(device).loadFromUrl(GltfModels[startup_model]);
 
   orbitCamera(canvas, vec3.fromValues(0, 0, 0), 1.5, mtx => viewMatrix.set(mtx));
@@ -314,7 +314,7 @@ export async function gltfDemo(startup_model) {
 
       instances.forEach((instance, i) => {
         const idx = primitiveInstances.offset + i;
-        primitiveInstances.arrayBuffer.set(instance.worldMatrix, idx * 32);
+        primitiveInstances.arrayBuffer.set(worldMatrixMap.get(instance), idx * 32);
         primitiveInstances.arrayBuffer.set(instance.normalMatrix, idx * 32 + 16);
       });
 
