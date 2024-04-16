@@ -87,10 +87,9 @@ export class TinyGltf {
 
     const decoder = new TextDecoder('utf-8');
     const jsonString = decoder.decode(chunks[JSON_CHUNK_TYPE]);
-    return this.loadFromJson(JSON.parse(jsonString), baseUrl, chunks[BIN_CHUNK_TYPE]);
-  }
+    const json = JSON.parse(jsonString);
+    const binaryChunk = chunks[BIN_CHUNK_TYPE];
 
-  async loadFromJson(json, baseUrl, binaryChunk = null) {
     if (!baseUrl) {
       throw new Error('baseUrl must be specified.');
     }
