@@ -21,11 +21,13 @@ function setWorldMatrix(gltf, node, parentWorldMatrix) {
     node.worldMatrix = mat4.clone(node.matrix);
   } else {
     node.worldMatrix = mat4.create();
-    mat4.fromRotationTranslationScale(
-        node.worldMatrix,
-        node.rotation,
-        node.translation,
-        node.scale);
+    if (node.rotation || node.position || node.translation) {
+      mat4.fromRotationTranslationScale(
+          node.worldMatrix,
+          node.rotation,
+          node.translation,
+          node.scale);
+    }
   }
 
   mat4.multiply(node.worldMatrix, parentWorldMatrix, node.worldMatrix);
@@ -103,14 +105,6 @@ export class TinyGltf {
 
     for (const bufferView of gltf.bufferViews) {
       bufferView.byteOffset = bufferView.byteOffset ?? 0;
-    }
-
-    for (const node of gltf.nodes) {
-      if (!node.matrix) {
-        node.rotation = node.rotation ?? [0, 0, 0, 1];
-        node.scale = node.scale ?? [1, 1, 1];
-        node.translation = node.translation ?? [0, 0, 0];
-      }
     }
 
     for (const sampler of gltf.samplers ?? []) {
