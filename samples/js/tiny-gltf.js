@@ -51,7 +51,6 @@ export function getWorldMatrixMap(gltf) {
 
 export async function loadFromUrl(device, url) {
   const defaultSampler = createGpuSamplerFromSampler(device);
-  const i = url.lastIndexOf("/");
   const response = await fetch(url);
 
   if (!url.endsWith(".glb")) {
