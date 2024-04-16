@@ -110,12 +110,6 @@ export class TinyGltf {
     // Buffers will be exposed as ArrayBuffers.
     // Images will be exposed as ImageBitmaps.
 
-    const buffers = [chunks[BIN_CHUNK_TYPE]];
-
-    if (!buffers) {
-      throw Error("Only handle binary chunks");
-    }
-
     // Compute a world transform for each node, starting at the root nodes and
     // working our way down.
     const worldMatrixMap = new Map();
@@ -151,9 +145,12 @@ export class TinyGltf {
         throw Error("Image URI fetching not supported");
       }
       const bufferView = gltf.bufferViews[image.bufferView];
+      if (bufferView.buffer !== 0) {
+        throw Error();
+      }
       return createImageBitmap(new Blob(
           [new Uint8Array(
-              buffers[bufferView.buffer], bufferView.byteOffset, bufferView.byteLength)],
+              chunks[BIN_CHUNK_TYPE], bufferView.byteOffset, bufferView.byteLength)],
           {type: image.mimeType})).then(image => createGpuTextureFromImage(this.device, image))
     }));
 
@@ -164,7 +161,7 @@ export class TinyGltf {
       gltf,
       gpuBuffers: Object.values(gltf.bufferViews).map((bufferView, index) =>
           createGpuBufferFromBufferView(this.device, bufferView,
-              buffers[bufferView.buffer], bufferViewUsages[index])),
+              chunks[BIN_CHUNK_TYPE], bufferViewUsages[index])),
       gpuTextures: Object.values(gltf.textures ?? []).map(texture => ({
         texture: imageTextures[texture.source],
         sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
