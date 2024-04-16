@@ -121,19 +121,6 @@ export class TinyGltf {
       throw Error("Only handle binary chunks");
     }
 
-    // Images
-    gltf.images = await Promise.all(gltf.images.map(image => {
-      if (image.uri) {
-        throw Error("Image URI fetching not supported");
-      }
-      const bufferView = gltf.bufferViews[image.bufferView];
-      return createImageBitmap(new Blob(
-          [new Uint8Array(
-              gltf.buffers[bufferView.buffer], bufferView.byteOffset, bufferView.byteLength)],
-          {type: image.mimeType}))
-
-    }))
-
     // Compute a world transform for each node, starting at the root nodes and
     // working our way down.
     for (const scene of Object.values(gltf.scenes)) {
@@ -168,8 +155,17 @@ export class TinyGltf {
         createGpuBufferFromBufferView(this.device, bufferView,
             gltf.buffers[bufferView.buffer], bufferViewUsages[index]));
 
-    const imageTextures = Object.values(gltf.images ?? []).map(image =>
-        createGpuTextureFromImage(this.device, image));
+    const imageTextures = await Promise.all(gltf.images.map(image => {
+      if (image.uri) {
+        throw Error("Image URI fetching not supported");
+      }
+      const bufferView = gltf.bufferViews[image.bufferView];
+      return createImageBitmap(new Blob(
+          [new Uint8Array(
+              gltf.buffers[bufferView.buffer], bufferView.byteOffset, bufferView.byteLength)],
+          {type: image.mimeType}))
+    }).map(imagePromise =>
+        imagePromise.then(image => createGpuTextureFromImage(this.device, image))));
 
     gltf.gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
         createGpuSamplerFromSampler(this.device, sampler));
