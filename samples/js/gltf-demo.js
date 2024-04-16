@@ -1,5 +1,5 @@
 import {mat4, vec3} from "../node_modules/gl-matrix/esm/index.js";
-import {TinyGltf} from "./tiny-gltf.js"
+import {getWorldMatrixMap, TinyGltf} from "./tiny-gltf.js"
 import {wgsl} from "../node_modules/wgsl-preprocessor/wgsl-preprocessor.js"
 
 // To make it easier to reference the WebGL enums that glTF uses.
@@ -162,9 +162,10 @@ export async function gltfDemo(startup_model) {
     }],
   });
 
-  const {gltf, gpuBuffers, gpuTextures, gpuDefaultSampler, worldMatrixMap} =
+  const {gltf, gpuBuffers, gpuTextures, gpuDefaultSampler} =
       await new TinyGltf(device).loadFromUrl(GltfModels[startup_model]);
 
+  const worldMatrixMap = getWorldMatrixMap(gltf);
   const normalMap = getNormalMatrixMap(worldMatrixMap);
 
   orbitCamera(canvas, vec3.fromValues(0, 0, 0), 1.5, mtx => viewMatrix.set(mtx));

@@ -11,32 +11,44 @@ const GLB_MAGIC = 0x46546C67;
 const JSON_CHUNK_TYPE = 0x4E4F534A;
 const BIN_CHUNK_TYPE = 0x004E4942;
 
-function setWorldMatrix(gltf, node, parentWorldMatrix, map) {
-  // Don't recompute nodes we've already visited.
-  if (map.has(node)) {
-    return;
-  }
+export function getWorldMatrixMap(gltf) {
+  const worldMatrixMap = new Map();
+  function setWorldMatrix(node, parentWorldMatrix) {
+    // Don't recompute nodes we've already visited.
+    if (worldMatrixMap.has(node)) {
+      return;
+    }
 
-  let worldMatrix;
-  if (node.matrix) {
-    worldMatrix = mat4.clone(node.matrix);
-  } else {
-    worldMatrix = mat4.create();
-    if (node.rotation || node.position || node.translation) {
-      mat4.fromRotationTranslationScale(
-          worldMatrix,
-          node.rotation,
-          node.translation,
-          node.scale);
+    let worldMatrix;
+    if (node.matrix) {
+      worldMatrix = mat4.clone(node.matrix);
+    } else {
+      worldMatrix = mat4.create();
+      if (node.rotation || node.position || node.translation) {
+        mat4.fromRotationTranslationScale(
+            worldMatrix,
+            node.rotation,
+            node.translation,
+            node.scale);
+      }
+    }
+
+    mat4.multiply(worldMatrix, parentWorldMatrix, worldMatrix);
+    worldMatrixMap.set(node, worldMatrix);
+
+    for (const childIndex of node.children ?? []) {
+      setWorldMatrix(gltf.nodes[childIndex], worldMatrix);
     }
   }
 
-  mat4.multiply(worldMatrix, parentWorldMatrix, worldMatrix);
-  map.set(node, worldMatrix);
-
-  for (const childIndex of node.children ?? []) {
-    setWorldMatrix(gltf, gltf.nodes[childIndex], worldMatrix, map);
+  // Compute a world transform for each node, starting at the root nodes and
+  // working our way down.
+  for (const scene of Object.values(gltf.scenes)) {
+    for (const nodeIndex of scene.nodes) {
+      setWorldMatrix(gltf.nodes[nodeIndex], mat4.create());
+    }
   }
+  return worldMatrixMap;
 }
 
 export class TinyGltf {
@@ -110,15 +122,6 @@ export class TinyGltf {
     // Buffers will be exposed as ArrayBuffers.
     // Images will be exposed as ImageBitmaps.
 
-    // Compute a world transform for each node, starting at the root nodes and
-    // working our way down.
-    const worldMatrixMap = new Map();
-    for (const scene of Object.values(gltf.scenes)) {
-      for (const nodeIndex of scene.nodes) {
-        setWorldMatrix(gltf, gltf.nodes[nodeIndex], mat4.create(), worldMatrixMap);
-      }
-    }
-
     // Identify all the vertex and index buffers by iterating through all the primitives accessors
     // and marking the buffer views as vertex or index usage.
     // (There's technically a target attribute on the buffer view that's supposed to tell us what
@@ -166,8 +169,7 @@ export class TinyGltf {
         texture: imageTextures[texture.source],
         sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
       })),
-      gpuDefaultSampler: this.defaultSampler,
-      worldMatrixMap
+      gpuDefaultSampler: this.defaultSampler
     }
   }
 
