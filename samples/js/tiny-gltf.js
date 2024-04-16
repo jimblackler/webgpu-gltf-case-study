@@ -118,10 +118,10 @@ export class TinyGltf {
 
     // Compute a world transform for each node, starting at the root nodes and
     // working our way down.
-    const map = new Map();
+    const worldMatrixMap = new Map();
     for (const scene of Object.values(gltf.scenes)) {
       for (const nodeIndex of scene.nodes) {
-        setWorldMatrix(gltf, gltf.nodes[nodeIndex], mat4.create(), map);
+        setWorldMatrix(gltf, gltf.nodes[nodeIndex], mat4.create(), worldMatrixMap);
       }
     }
 
@@ -170,7 +170,7 @@ export class TinyGltf {
         sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
       })),
       gpuDefaultSampler: this.defaultSampler,
-      worldMatrixMap: map
+      worldMatrixMap
     }
   }
 
