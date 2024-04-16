@@ -166,7 +166,7 @@ export class TinyGltf {
           {type: image.mimeType})).then(image => createGpuTextureFromImage(this.device, image))
     }));
 
-    gltf.gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
+    const gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
         createGpuSamplerFromSampler(this.device, sampler));
 
     gltf.gpuTextures = Object.values(gltf.textures ?? []).map(texture => ({
