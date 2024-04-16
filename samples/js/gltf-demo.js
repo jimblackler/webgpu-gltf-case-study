@@ -1,6 +1,9 @@
 import {mat4, vec3} from '../node_modules/gl-matrix/esm/index.js';
-import {TinyGltfWebGpu} from './tiny-gltf.js'
+import {TinyGltf} from './tiny-gltf.js'
 import {wgsl} from '../node_modules/wgsl-preprocessor/wgsl-preprocessor.js'
+
+// To make it easier to reference the WebGL enums that glTF uses.
+const GL = WebGLRenderingContext;
 
 const GltfRootDir = './glTF-Sample-Models/2.0';
 
@@ -36,6 +39,75 @@ function createSolidColorTexture(device, r, g, b, a) {
   });
   device.queue.writeTexture({texture}, data, {}, {width: 1, height: 1});
   return texture;
+}
+
+function sizeForComponentType(componentType) {
+  switch (componentType) {
+    case GL.BYTE:
+      return 1;
+    case GL.UNSIGNED_BYTE:
+      return 1;
+    case GL.SHORT:
+      return 2;
+    case GL.UNSIGNED_SHORT:
+      return 2;
+    case GL.UNSIGNED_INT:
+      return 4;
+    case GL.FLOAT:
+      return 4;
+    default:
+      return 0;
+  }
+}
+
+function packedArrayStrideForAccessor(accessor) {
+  return TinyGltf.sizeForComponentType(accessor.componentType) * TinyGltf.componentCountForType(accessor.type);
+}
+
+function gpuFormatForAccessor(accessor) {
+  const norm = accessor.normalized ? 'norm' : 'int';
+  const count = TinyGltf.componentCountForType(accessor.type);
+  const x = count > 1 ? `x${count}` : '';
+  switch (accessor.componentType) {
+    case GL.BYTE:
+      return `s${norm}8${x}`;
+    case GL.UNSIGNED_BYTE:
+      return `u${norm}8${x}`;
+    case GL.SHORT:
+      return `s${norm}16${x}`;
+    case GL.UNSIGNED_SHORT:
+      return `u${norm}16${x}`;
+    case GL.UNSIGNED_INT:
+      return `u${norm}32${x}`;
+    case GL.FLOAT:
+      return `float32${x}`;
+  }
+}
+
+function gpuPrimitiveTopologyForMode(mode) {
+  switch (mode) {
+    case GL.TRIANGLES:
+      return 'triangle-list';
+    case GL.TRIANGLE_STRIP:
+      return 'triangle-strip';
+    case GL.LINES:
+      return 'line-list';
+    case GL.LINE_STRIP:
+      return 'line-strip';
+    case GL.POINTS:
+      return 'point-list';
+  }
+}
+
+function gpuIndexFormatForComponentType(componentType) {
+  switch (componentType) {
+    case GL.UNSIGNED_SHORT:
+      return 'uint16';
+    case GL.UNSIGNED_INT:
+      return 'uint32';
+    default:
+      return 0;
+  }
 }
 
 export async function gltfDemo(startup_model) {
@@ -78,7 +150,7 @@ export async function gltfDemo(startup_model) {
     }],
   });
 
-  const gltf = await new TinyGltfWebGpu(device).loadFromUrl(GltfModels[startup_model]);
+  const gltf = await new TinyGltf(device).loadFromUrl(GltfModels[startup_model]);
 
   orbitCamera(canvas, vec3.fromValues(0, 0, 0), 1.5, mtx => viewMatrix.set(mtx));
 
@@ -199,7 +271,7 @@ export async function gltfDemo(startup_model) {
         if (!buffer || separate) {
           buffer = {
             arrayStride: gltf.bufferViews[accessor.bufferView].byteStride ||
-                TinyGltfWebGpu.packedArrayStrideForAccessor(accessor),
+                packedArrayStrideForAccessor(accessor),
             attributes: [],
           };
 
@@ -215,7 +287,7 @@ export async function gltfDemo(startup_model) {
 
         buffer.attributes.push({
           shaderLocation,
-          format: TinyGltfWebGpu.gpuFormatForAccessor(accessor),
+          format: gpuFormatForAccessor(accessor),
           offset: accessor.byteOffset,
         });
 
@@ -256,7 +328,7 @@ export async function gltfDemo(startup_model) {
         const accessor = gltf.accessors[primitive.indices];
         gpuPrimitive.indexBuffer = gltf.gpuBuffers[accessor.bufferView];
         gpuPrimitive.indexOffset = accessor.byteOffset;
-        gpuPrimitive.indexType = TinyGltfWebGpu.gpuIndexFormatForComponentType(accessor.componentType);
+        gpuPrimitive.indexType = gpuIndexFormatForComponentType(accessor.componentType);
         gpuPrimitive.drawCount = accessor.count;
       }
 
@@ -266,7 +338,7 @@ export async function gltfDemo(startup_model) {
       // Rather than just storing a list of primitives for each pipeline store a map of
       // materials which use the pipeline to the primitives that use the material.
       const materialPrimitives1 = getPipelineForPrimitive({
-        topology: TinyGltfWebGpu.gpuPrimitiveTopologyForMode(primitive.mode),
+        topology: gpuPrimitiveTopologyForMode(primitive.mode),
         buffers: sortedBufferLayout,
         doubleSided: material.doubleSided,
         alphaMode: material.alphaMode,

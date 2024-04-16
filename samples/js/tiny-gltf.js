@@ -43,6 +43,11 @@ function setWorldMatrix(gltf, node, parentWorldMatrix) {
 }
 
 export class TinyGltf {
+  constructor(device) {
+    this.device = device;
+    this.defaultSampler = createGpuSamplerFromSampler(device);
+  }
+
   async loadFromUrl(url) {
     const i = url.lastIndexOf('/');
     const baseUrl = (i !== 0) ? url.substring(0, i + 1) : '';
@@ -157,6 +162,45 @@ export class TinyGltf {
         setWorldMatrix(json, json.nodes[nodeIndex], mat4.create());
       }
     }
+
+    // Identify all the vertex and index buffers by iterating through all the primitives accessors
+    // and marking the buffer views as vertex or index usage.
+    // (There's technically a target attribute on the buffer view that's supposed to tell us what
+    // it's used for, but that appears to be rarely populated.)
+    const bufferViewUsages = [];
+
+    function markAccessorUsage(accessorIndex, usage) {
+      bufferViewUsages[json.accessors[accessorIndex].bufferView] |= usage;
+    }
+
+    for (const mesh of json.meshes) {
+      for (const primitive of mesh.primitives) {
+        if ('indices' in primitive) {
+          markAccessorUsage(primitive.indices, GPUBufferUsage.INDEX);
+        }
+        for (const attribute of Object.values(primitive.attributes)) {
+          markAccessorUsage(attribute, GPUBufferUsage.VERTEX);
+        }
+      }
+    }
+
+    // Create WebGPU objects for all necessary buffers, images, and samplers
+    json.gpuBuffers = Object.values(json.bufferViews).map((bufferView, index) =>
+        createGpuBufferFromBufferView(this.device, bufferView,
+            json.buffers[bufferView.buffer], bufferViewUsages[index]));
+
+    const imageTextures = Object.values(json.images ?? []).map(image =>
+        createGpuTextureFromImage(this.device, image));
+
+    json.gpuSamplers = Object.values(json.samplers ?? []).map(sampler =>
+        createGpuSamplerFromSampler(this.device, sampler));
+
+    json.gpuTextures = Object.values(json.textures ?? []).map(texture => ({
+      texture: imageTextures[texture.source],
+      sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
+    }));
+
+    json.gpuDefaultSampler = this.defaultSampler;
     return json;
   }
 
@@ -175,28 +219,7 @@ export class TinyGltf {
     }
   }
 
-  static sizeForComponentType(componentType) {
-    switch (componentType) {
-      case GL.BYTE:
-        return 1;
-      case GL.UNSIGNED_BYTE:
-        return 1;
-      case GL.SHORT:
-        return 2;
-      case GL.UNSIGNED_SHORT:
-        return 2;
-      case GL.UNSIGNED_INT:
-        return 4;
-      case GL.FLOAT:
-        return 4;
-      default:
-        return 0;
-    }
-  }
 
-  static packedArrayStrideForAccessor(accessor) {
-    return TinyGltf.sizeForComponentType(accessor.componentType) * TinyGltf.componentCountForType(accessor.type);
-  }
 }
 
 /**
@@ -284,105 +307,4 @@ function createGpuTextureFromImage(device, source) {
   device.queue.copyExternalImageToTexture({source}, {texture}, size);
 
   return texture;
-}
-
-export class TinyGltfWebGpu extends TinyGltf {
-  constructor(device) {
-    super();
-
-    this.device = device;
-    this.defaultSampler = createGpuSamplerFromSampler(device);
-  }
-
-  async loadFromJson(json, baseUrl, binaryChunk) {
-    // Load the glTF file
-    const gltf = await super.loadFromJson(json, baseUrl, binaryChunk);
-
-    // Identify all the vertex and index buffers by iterating through all the primitives accessors
-    // and marking the buffer views as vertex or index usage.
-    // (There's technically a target attribute on the buffer view that's supposed to tell us what
-    // it's used for, but that appears to be rarely populated.)
-    const bufferViewUsages = [];
-
-    function markAccessorUsage(accessorIndex, usage) {
-      bufferViewUsages[gltf.accessors[accessorIndex].bufferView] |= usage;
-    }
-
-    for (const mesh of gltf.meshes) {
-      for (const primitive of mesh.primitives) {
-        if ('indices' in primitive) {
-          markAccessorUsage(primitive.indices, GPUBufferUsage.INDEX);
-        }
-        for (const attribute of Object.values(primitive.attributes)) {
-          markAccessorUsage(attribute, GPUBufferUsage.VERTEX);
-        }
-      }
-    }
-
-    // Create WebGPU objects for all necessary buffers, images, and samplers
-    gltf.gpuBuffers = Object.values(gltf.bufferViews).map((bufferView, index) =>
-        createGpuBufferFromBufferView(this.device, bufferView,
-            gltf.buffers[bufferView.buffer], bufferViewUsages[index]));
-
-    const imageTextures = Object.values(gltf.images ?? []).map(image =>
-        createGpuTextureFromImage(this.device, image));
-
-    gltf.gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
-        createGpuSamplerFromSampler(this.device, sampler));
-
-    gltf.gpuTextures = Object.values(gltf.textures ?? []).map(texture => ({
-      texture: imageTextures[texture.source],
-      sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
-    }));
-
-    gltf.gpuDefaultSampler = this.defaultSampler;
-
-    return gltf;
-  }
-
-  static gpuFormatForAccessor(accessor) {
-    const norm = accessor.normalized ? 'norm' : 'int';
-    const count = TinyGltf.componentCountForType(accessor.type);
-    const x = count > 1 ? `x${count}` : '';
-    switch (accessor.componentType) {
-      case GL.BYTE:
-        return `s${norm}8${x}`;
-      case GL.UNSIGNED_BYTE:
-        return `u${norm}8${x}`;
-      case GL.SHORT:
-        return `s${norm}16${x}`;
-      case GL.UNSIGNED_SHORT:
-        return `u${norm}16${x}`;
-      case GL.UNSIGNED_INT:
-        return `u${norm}32${x}`;
-      case GL.FLOAT:
-        return `float32${x}`;
-    }
-  }
-
-  static gpuPrimitiveTopologyForMode(mode) {
-    switch (mode) {
-      case GL.TRIANGLES:
-        return 'triangle-list';
-      case GL.TRIANGLE_STRIP:
-        return 'triangle-strip';
-      case GL.LINES:
-        return 'line-list';
-      case GL.LINE_STRIP:
-        return 'line-strip';
-      case GL.POINTS:
-        return 'point-list';
-    }
-  }
-
-  static gpuIndexFormatForComponentType(componentType) {
-    switch (componentType) {
-      case GL.UNSIGNED_SHORT:
-        return 'uint16';
-      case GL.UNSIGNED_INT:
-        return 'uint32';
-      default:
-        return 0;
-    }
-  }
 }
