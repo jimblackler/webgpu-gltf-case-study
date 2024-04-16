@@ -115,9 +115,9 @@ export class TinyGltf {
     // Buffers will be exposed as ArrayBuffers.
     // Images will be exposed as ImageBitmaps.
 
-    gltf.buffers = [chunks[BIN_CHUNK_TYPE]];
+    const buffers = [chunks[BIN_CHUNK_TYPE]];
 
-    if (!gltf.buffers) {
+    if (!buffers) {
       throw Error("Only handle binary chunks");
     }
 
@@ -153,7 +153,7 @@ export class TinyGltf {
     // Create WebGPU objects for all necessary buffers, images, and samplers
     gltf.gpuBuffers = Object.values(gltf.bufferViews).map((bufferView, index) =>
         createGpuBufferFromBufferView(this.device, bufferView,
-            gltf.buffers[bufferView.buffer], bufferViewUsages[index]));
+            buffers[bufferView.buffer], bufferViewUsages[index]));
 
     const imageTextures = await Promise.all(gltf.images.map(image => {
       if (image.uri) {
@@ -162,7 +162,7 @@ export class TinyGltf {
       const bufferView = gltf.bufferViews[image.bufferView];
       return createImageBitmap(new Blob(
           [new Uint8Array(
-              gltf.buffers[bufferView.buffer], bufferView.byteOffset, bufferView.byteLength)],
+              buffers[bufferView.buffer], bufferView.byteOffset, bufferView.byteLength)],
           {type: image.mimeType})).then(image => createGpuTextureFromImage(this.device, image))
     }));
 
