@@ -53,16 +53,11 @@ export class TinyGltf {
     const baseUrl = (i !== 0) ? url.substring(0, i + 1) : '';
     const response = await fetch(url);
 
-    if (url.endsWith('.gltf')) {
-      return this.loadFromJson(await response.json(), baseUrl);
-    } else if (url.endsWith('.glb')) {
-      return this.loadFromBinary(await response.arrayBuffer(), baseUrl);
-    } else {
-      throw new Error('Unrecognized file extension');
+    if (!url.endsWith('.glb')) {
+      throw Error('Only loads glb')
     }
-  }
+    const arrayBuffer = await response.arrayBuffer();
 
-  async loadFromBinary(arrayBuffer, baseUrl) {
     const headerView = new DataView(arrayBuffer, 0, 12);
     const magic = headerView.getUint32(0, true);
     const version = headerView.getUint32(4, true);
