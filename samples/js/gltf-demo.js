@@ -1,5 +1,5 @@
 import {mat4, vec3} from "../node_modules/gl-matrix/esm/index.js";
-import {getWorldMatrixMap, TinyGltf} from "./tiny-gltf.js"
+import {getWorldMatrixMap, loadFromUrl} from "./tiny-gltf.js"
 import {wgsl} from "../node_modules/wgsl-preprocessor/wgsl-preprocessor.js"
 
 // To make it easier to reference the WebGL enums that glTF uses.
@@ -41,6 +41,21 @@ function createSolidColorTexture(device, r, g, b, a) {
   return texture;
 }
 
+function componentCountForType(type) {
+  switch (type) {
+    case "SCALAR":
+      return 1;
+    case "VEC2":
+      return 2;
+    case "VEC3":
+      return 3;
+    case "VEC4":
+      return 4;
+    default:
+      return 0;
+  }
+}
+
 function sizeForComponentType(componentType) {
   switch (componentType) {
     case GL.BYTE:
@@ -61,12 +76,12 @@ function sizeForComponentType(componentType) {
 }
 
 function packedArrayStrideForAccessor(accessor) {
-  return TinyGltf.sizeForComponentType(accessor.componentType) * TinyGltf.componentCountForType(accessor.type);
+  return sizeForComponentType(accessor.componentType) * componentCountForType(accessor.type);
 }
 
 function gpuFormatForAccessor(accessor) {
   const norm = accessor.normalized ? "norm" : "int";
-  const count = TinyGltf.componentCountForType(accessor.type);
+  const count = componentCountForType(accessor.type);
   const x = count > 1 ? `x${count}` : "";
   switch (accessor.componentType) {
     case GL.BYTE:
@@ -163,7 +178,7 @@ export async function gltfDemo(startup_model) {
   });
 
   const {gltf, gpuBuffers, gpuTextures, gpuDefaultSampler} =
-      await new TinyGltf(device).loadFromUrl(GltfModels[startup_model]);
+      await loadFromUrl(device, GltfModels[startup_model]);
 
   const worldMatrixMap = getWorldMatrixMap(gltf);
   const normalMap = getNormalMatrixMap(worldMatrixMap);
