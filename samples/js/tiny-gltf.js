@@ -131,12 +131,9 @@ export class TinyGltf {
       sampler.wrapT = sampler.wrapT ?? GL.REPEAT;
     }
 
-    // Resolve buffers and images first, since these are the only external resources that the file
-    // might reference.
     // Buffers will be exposed as ArrayBuffers.
     // Images will be exposed as ImageBitmaps.
 
-    // Buffers
     if (!binaryChunk) {
       throw Error('Only handle binary chunks');
     }
