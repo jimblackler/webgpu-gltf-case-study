@@ -163,9 +163,8 @@ export class TinyGltf {
       return createImageBitmap(new Blob(
           [new Uint8Array(
               gltf.buffers[bufferView.buffer], bufferView.byteOffset, bufferView.byteLength)],
-          {type: image.mimeType}))
-    }).map(imagePromise =>
-        imagePromise.then(image => createGpuTextureFromImage(this.device, image))));
+          {type: image.mimeType})).then(image => createGpuTextureFromImage(this.device, image))
+    }));
 
     gltf.gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
         createGpuSamplerFromSampler(this.device, sampler));
