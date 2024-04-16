@@ -13,40 +13,38 @@ const BIN_CHUNK_TYPE = 0x004E4942;
 
 export function getWorldMatrixMap(gltf) {
   const worldMatrixMap = new Map();
-  function setWorldMatrix(node, parentWorldMatrix) {
-    // Don't recompute nodes we've already visited.
-    if (worldMatrixMap.has(node)) {
-      return;
-    }
-
-    let worldMatrix;
-    if (node.matrix) {
-      worldMatrix = mat4.clone(node.matrix);
-    } else {
-      worldMatrix = mat4.create();
-      if (node.rotation || node.position || node.translation) {
-        mat4.fromRotationTranslationScale(
-            worldMatrix,
-            node.rotation,
-            node.translation,
-            node.scale);
+  function setWorldMatrix(nodeIdxs, parentWorldMatrix) {
+    for (const node of nodeIdxs.map(nodeIdx => gltf.nodes[nodeIdx])) {
+      // Don't recompute nodes we've already visited.
+      if (worldMatrixMap.has(node)) {
+        continue;
       }
-    }
 
-    mat4.multiply(worldMatrix, parentWorldMatrix, worldMatrix);
-    worldMatrixMap.set(node, worldMatrix);
+      let worldMatrix;
+      if (node.matrix) {
+        worldMatrix = mat4.clone(node.matrix);
+      } else {
+        worldMatrix = mat4.create();
+        if (node.rotation || node.position || node.translation) {
+          mat4.fromRotationTranslationScale(
+              worldMatrix,
+              node.rotation,
+              node.translation,
+              node.scale);
+        }
+      }
 
-    for (const childIndex of node.children ?? []) {
-      setWorldMatrix(gltf.nodes[childIndex], worldMatrix);
+      mat4.multiply(worldMatrix, parentWorldMatrix, worldMatrix);
+      worldMatrixMap.set(node, worldMatrix);
+
+      setWorldMatrix(node.children ?? [], worldMatrix);
     }
   }
 
   // Compute a world transform for each node, starting at the root nodes and
   // working our way down.
   for (const scene of Object.values(gltf.scenes)) {
-    for (const nodeIndex of scene.nodes) {
-      setWorldMatrix(gltf.nodes[nodeIndex], mat4.create());
-    }
+    setWorldMatrix(scene.nodes, mat4.create());
   }
   return worldMatrixMap;
 }
