@@ -150,7 +150,8 @@ export async function gltfDemo(startup_model) {
     }],
   });
 
-  const gltf = await new TinyGltf(device).loadFromUrl(GltfModels[startup_model]);
+  const {gltf, gpuBuffers, gpuTextures, gpuDefaultSampler} =
+      await new TinyGltf(device).loadFromUrl(GltfModels[startup_model]);
 
   orbitCamera(canvas, vec3.fromValues(0, 0, 0), 1.5, mtx => viewMatrix.set(mtx));
 
@@ -216,11 +217,11 @@ export async function gltfDemo(startup_model) {
     materialBufferArray[4] = material.alphaCutoff || 0.5;
     materialUniformBuffer.unmap();
 
-    let baseColor = gltf.gpuTextures[material.pbrMetallicRoughness?.baseColorTexture?.index];
+    let baseColor = gpuTextures[material.pbrMetallicRoughness?.baseColorTexture?.index];
     if (!baseColor) {
       baseColor = {
         texture: createSolidColorTexture(device, 1, 1, 1, 1),
-        sampler: gltf.gpuDefaultSampler,
+        sampler: gpuDefaultSampler,
       };
     }
 
@@ -254,7 +255,7 @@ export async function gltfDemo(startup_model) {
   for (const mesh of gltf.meshes) {
     for (const primitive of mesh.primitives) {
       const bufferLayout = new Map();
-      const gpuBuffers = new Map();
+      const _gpuBuffers = new Map();
       let drawCount = 0;
 
       for (const [attribName, accessorIndex] of Object.entries(primitive.attributes)) {
@@ -276,12 +277,12 @@ export async function gltfDemo(startup_model) {
           };
 
           bufferLayout.set(separate ? attribName : accessor.bufferView, buffer);
-          gpuBuffers.set(buffer, {
-            buffer: gltf.gpuBuffers[accessor.bufferView],
+          _gpuBuffers.set(buffer, {
+            buffer: gpuBuffers[accessor.bufferView],
             offset: accessor.byteOffset
           });
         } else {
-          const gpuBuffer = gpuBuffers.get(buffer);
+          const gpuBuffer = _gpuBuffers.get(buffer);
           gpuBuffer.offset = Math.min(gpuBuffer.offset, accessor.byteOffset);
         }
 
@@ -295,7 +296,7 @@ export async function gltfDemo(startup_model) {
       }
 
       for (const buffer of bufferLayout.values()) {
-        const gpuBuffer = gpuBuffers.get(buffer);
+        const gpuBuffer = _gpuBuffers.get(buffer);
         for (const attribute of buffer.attributes) {
           attribute.offset -= gpuBuffer.offset;
         }
@@ -307,7 +308,7 @@ export async function gltfDemo(startup_model) {
           (a, b) => a.attributes[0].shaderLocation - b.attributes[0].shaderLocation);
 
       // Ensure that the gpuBuffers are saved in the same order as the buffer layout.
-      const sortedGpuBuffers = sortedBufferLayout.map(buffer => gpuBuffers.get(buffer));
+      const sortedGpuBuffers = sortedBufferLayout.map(buffer => _gpuBuffers.get(buffer));
 
       const instances = primitiveInstances.matrices.get(primitive);
 
@@ -326,7 +327,7 @@ export async function gltfDemo(startup_model) {
 
       if ("indices" in primitive) {
         const accessor = gltf.accessors[primitive.indices];
-        gpuPrimitive.indexBuffer = gltf.gpuBuffers[accessor.bufferView];
+        gpuPrimitive.indexBuffer = gpuBuffers[accessor.bufferView];
         gpuPrimitive.indexOffset = accessor.byteOffset;
         gpuPrimitive.indexType = gpuIndexFormatForComponentType(accessor.componentType);
         gpuPrimitive.drawCount = accessor.count;

@@ -150,11 +150,6 @@ export class TinyGltf {
       }
     }
 
-    // Create WebGPU objects for all necessary buffers, images, and samplers
-    gltf.gpuBuffers = Object.values(gltf.bufferViews).map((bufferView, index) =>
-        createGpuBufferFromBufferView(this.device, bufferView,
-            buffers[bufferView.buffer], bufferViewUsages[index]));
-
     const imageTextures = await Promise.all(gltf.images.map(image => {
       if (image.uri) {
         throw Error("Image URI fetching not supported");
@@ -169,13 +164,17 @@ export class TinyGltf {
     const gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
         createGpuSamplerFromSampler(this.device, sampler));
 
-    gltf.gpuTextures = Object.values(gltf.textures ?? []).map(texture => ({
-      texture: imageTextures[texture.source],
-      sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
-    }));
-
-    gltf.gpuDefaultSampler = this.defaultSampler;
-    return gltf;
+    return {
+      gltf,
+      gpuBuffers: Object.values(gltf.bufferViews).map((bufferView, index) =>
+          createGpuBufferFromBufferView(this.device, bufferView,
+              buffers[bufferView.buffer], bufferViewUsages[index])),
+      gpuTextures: Object.values(gltf.textures ?? []).map(texture => ({
+        texture: imageTextures[texture.source],
+        sampler: texture.sampler ? gpuSamplers[texture.sampler] : this.defaultSampler
+      })),
+      gpuDefaultSampler: this.defaultSampler
+    }
   }
 
   static componentCountForType(type) {
