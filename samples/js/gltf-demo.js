@@ -358,9 +358,6 @@ export async function gltfDemo(startup_model) {
     sampler.wrapT = sampler.wrapT ?? GL.REPEAT;
   }
 
-  // Buffers will be exposed as ArrayBuffers.
-  // Images will be exposed as ImageBitmaps.
-
   // Identify all the vertex and index buffers by iterating through all the primitives accessors
   // and marking the buffer views as vertex or index usage.
   // (There's technically a target attribute on the buffer view that's supposed to tell us what
