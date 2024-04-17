@@ -200,37 +200,6 @@ function createGpuBufferFromBufferView(device, bufferView, buffer, usage) {
   return gpuBuffer;
 }
 
-function createGpuSamplerFromSampler(device, sampler) {
-  const descriptor = {
-    label: sampler.name,
-    addressModeU: gpuAddressModeForWrap(sampler.wrapS),
-    addressModeV: gpuAddressModeForWrap(sampler.wrapT),
-  };
-
-  if (!sampler.magFilter || sampler.magFilter == GL.LINEAR) {
-    descriptor.magFilter = "linear";
-  }
-
-  switch (sampler.minFilter) {
-    case GL.NEAREST:
-      break;
-    case GL.LINEAR:
-    case GL.LINEAR_MIPMAP_NEAREST:
-      descriptor.minFilter = "linear";
-      break;
-    case GL.NEAREST_MIPMAP_LINEAR:
-      descriptor.mipmapFilter = "linear";
-      break;
-    case GL.LINEAR_MIPMAP_LINEAR:
-    default:
-      descriptor.minFilter = "linear";
-      descriptor.mipmapFilter = "linear";
-      break;
-  }
-
-  return device.createSampler(descriptor);
-}
-
 function createGpuTextureFromImage(device, source) {
   const size = {width: source.width, height: source.height};
   const texture = device.createTexture({
@@ -382,8 +351,36 @@ export async function gltfDemo(startup_model) {
         {type: image.mimeType})).then(image => createGpuTextureFromImage(device, image))
   }));
 
-  const gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
-      createGpuSamplerFromSampler(device, sampler));
+  const gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler => {
+    const descriptor = {
+      label: sampler.name,
+      addressModeU: gpuAddressModeForWrap(sampler.wrapS),
+      addressModeV: gpuAddressModeForWrap(sampler.wrapT),
+    };
+
+    if (!sampler.magFilter || sampler.magFilter == GL.LINEAR) {
+      descriptor.magFilter = "linear";
+    }
+
+    switch (sampler.minFilter) {
+      case GL.NEAREST:
+        break;
+      case GL.LINEAR:
+      case GL.LINEAR_MIPMAP_NEAREST:
+        descriptor.minFilter = "linear";
+        break;
+      case GL.NEAREST_MIPMAP_LINEAR:
+        descriptor.mipmapFilter = "linear";
+        break;
+      case GL.LINEAR_MIPMAP_LINEAR:
+      default:
+        descriptor.minFilter = "linear";
+        descriptor.mipmapFilter = "linear";
+        break;
+    }
+
+    return device.createSampler(descriptor)
+  })
 
   const gpuBuffers = Object.values(gltf.bufferViews).map((bufferView, index) =>
       createGpuBufferFromBufferView(device, bufferView,
