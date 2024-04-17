@@ -1,4 +1,4 @@
-import {mat4, vec3} from "../node_modules/gl-matrix/esm/index.js";
+import {mat4, quat, vec3} from "../node_modules/gl-matrix/esm/index.js";
 import {wgsl} from "../node_modules/wgsl-preprocessor/wgsl-preprocessor.js"
 
 // To make it easier to reference the WebGL enums that glTF uses.
@@ -144,13 +144,11 @@ function getWorldMatrixMap(gltf) {
         worldMatrix = mat4.clone(node.matrix);
       } else {
         worldMatrix = mat4.create();
-        if (node.rotation || node.position || node.translation) {
-          mat4.fromRotationTranslationScale(
-              worldMatrix,
-              node.rotation ?? vec3.fromValues(0, 0, 0),
-              node.translation ?? vec3.fromValues(0, 0, 0),
-              node.scale ?? vec3.fromValues(1, 1, 1));
-        }
+        mat4.fromRotationTranslationScale(
+            worldMatrix,
+            node.rotation ?? quat.create(),
+            node.translation ?? vec3.fromValues(0, 0, 0),
+            node.scale ?? vec3.fromValues(1, 1, 1))
       }
 
       mat4.multiply(worldMatrix, parentWorldMatrix, worldMatrix);
