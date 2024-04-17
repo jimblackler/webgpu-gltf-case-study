@@ -389,7 +389,6 @@ export async function gltfDemo(startup_model) {
   orbitCamera(canvas, vec3.fromValues(0, 0, 0), 1.5, mtx => viewMatrix.set(mtx));
 
   const primitiveInstancesMatrices = new Map();
-  let primitiveInstancesOffset = 0;
 
   gltf.nodes.forEach(node => gltf.meshes[node.mesh]?.primitives.forEach(primitive => {
     const instances = primitiveInstancesMatrices.get(primitive);
@@ -638,6 +637,7 @@ export async function gltfDemo(startup_model) {
     return gpuPipeline;
   }
 
+  let primitiveInstancesOffset = 0;
   for (const mesh of gltf.meshes) {
     for (const primitive of mesh.primitives) {
       const bufferLayout = new Map();
@@ -698,18 +698,17 @@ export async function gltfDemo(startup_model) {
 
       const instances = primitiveInstancesMatrices.get(primitive);
 
-      instances.forEach((instance, i) => {
-        const idx = primitiveInstancesOffset + i;
-        primitiveInstancesArrayBuffer.set(worldMatrixMap.get(instance), idx * 32);
-        primitiveInstancesArrayBuffer.set(normalMap.get(instance), idx * 32 + 16);
-      });
-
       const gpuPrimitive = {
         buffers: sortedGpuBuffers,
         drawCount,
         instances: {first: primitiveInstancesOffset, count: instances.length}
       };
-      primitiveInstancesOffset += instances.length;
+
+      instances.forEach((instance, i) => {
+        const idx = primitiveInstancesOffset++;
+        primitiveInstancesArrayBuffer.set(worldMatrixMap.get(instance), idx * 32);
+        primitiveInstancesArrayBuffer.set(normalMap.get(instance), idx * 32 + 16);
+      });
 
       if ("indices" in primitive) {
         const accessor = gltf.accessors[primitive.indices];
