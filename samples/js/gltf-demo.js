@@ -814,10 +814,8 @@ export async function gltfDemo(startup_model) {
             renderPass.setVertexBuffer(Number.parseInt(bufferIndex), buffer.buffer, buffer.offset);
           }
           if (primitive.indexBuffer) {
-            renderPass.setIndexBuffer(primitive.indexBuffer, primitive.indexType, primitive.indexOffset);
-          }
-
-          if (primitive.indexBuffer) {
+            renderPass.setIndexBuffer(
+                primitive.indexBuffer, primitive.indexType, primitive.indexOffset);
             renderPass.drawIndexed(
                 primitive.drawCount, primitive.instanceCount, 0, 0, primitive.firstInstance);
           } else {
