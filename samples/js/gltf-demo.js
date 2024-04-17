@@ -158,9 +158,9 @@ function getWorldMatrixMap(gltf) {
         if (node.rotation || node.position || node.translation) {
           mat4.fromRotationTranslationScale(
               worldMatrix,
-              node.rotation,
-              node.translation,
-              node.scale);
+              node.rotation ?? vec3.fromValues(0, 0, 0),
+              node.translation ?? vec3.fromValues(0, 0, 0),
+              node.scale ?? vec3.fromValues(1, 1, 1));
         }
       }
 
