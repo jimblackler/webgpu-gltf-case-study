@@ -388,8 +388,6 @@ export async function gltfDemo(startup_model) {
 
   orbitCamera(canvas, vec3.fromValues(0, 0, 0), 1.5, mtx => viewMatrix.set(mtx));
 
-  const shaderModules = new Map();
-
   const instanceBindGroupLayout = device.createBindGroupLayout({
     label: `glTF Instance BindGroupLayout`,
     entries: [{
@@ -476,6 +474,105 @@ export async function gltfDemo(startup_model) {
   });
 
   primitiveInstances.arrayBuffer = new Float32Array(instanceBuffer.getMappedRange());
+
+  const shaderModules = new Map();
+
+  function getShaderModule(args) {
+    const key = JSON.stringify(args);
+
+    let shaderModule = shaderModules.get(key);
+    if (!shaderModule) {
+      const code = wgsl`
+              struct Camera {
+                projection : mat4x4f,
+                view : mat4x4f,
+                position : vec3f,
+                time : f32,
+              };
+              @group(0) @binding(0) var<uniform> camera : Camera;
+
+              struct Model {
+                matrix: mat4x4f,
+                normalMat: mat4x4f,
+              }
+              @group(1) @binding(0) var<storage> instances : array<Model>;
+
+              struct Material {
+                baseColorFactor : vec4f,
+                alphaCutoff: f32,
+              };
+              @group(2) @binding(0) var<uniform> material : Material;
+              @group(2) @binding(1) var materialSampler : sampler;
+              @group(2) @binding(2) var baseColorTexture : texture_2d<f32>;
+
+              struct VertexInput {
+                @builtin(instance_index) instance : u32,
+                @location(${ShaderLocations.POSITION}) position : vec3f,
+                @location(${ShaderLocations.NORMAL}) normal : vec3f,
+
+                #if ${args.hasTexcoord}
+                  @location(${ShaderLocations.TEXCOORD_0}) texcoord : vec2f,
+                #endif
+              };
+
+              struct VertexOutput {
+                @builtin(position) position : vec4f,
+                @location(0) normal : vec3f,
+                @location(1) texcoord : vec2f,
+              };
+
+              @vertex
+              fn vertexMain(input : VertexInput) -> VertexOutput {
+                var output : VertexOutput;
+
+                let model = instances[input.instance];
+                output.position = camera.projection * camera.view * model.matrix * vec4f(input.position, 1);
+                output.normal = (camera.view * model.normalMat * vec4f(input.normal, 0)).xyz;
+
+                #if ${args.hasTexcoord}
+                  output.texcoord = input.texcoord;
+                #else
+                  output.texcoord = vec2f(0);
+                #endif
+
+                return output;
+              }
+
+              // Some hardcoded lighting
+              const lightDir = vec3f(0.25, 0.5, 1);
+              const lightColor = vec3f(1);
+              const ambientColor = vec3f(0.1);
+
+              @fragment
+              fn fragmentMain(input : VertexOutput) -> @location(0) vec4f {
+                let baseColor = textureSample(baseColorTexture, materialSampler, input.texcoord) * material.baseColorFactor;
+
+                #if ${args.useAlphaCutoff}
+                  // If the alpha mode is MASK discard any fragments below the alpha cutoff.
+                  if (baseColor.a < material.alphaCutoff) {
+                    discard;
+                  }
+                #endif
+
+                // An extremely simple directional lighting model, just to give our model some shape.
+                let N = normalize(input.normal);
+                let L = normalize(lightDir);
+                let NDotL = max(dot(N, L), 0.0);
+                let surfaceColor = (baseColor.rgb * ambientColor) + (baseColor.rgb * NDotL);
+
+                return vec4f(surfaceColor, baseColor.a);
+              }
+            `;
+
+      shaderModule = device.createShaderModule({
+        label: "Simple glTF rendering shader module",
+        code,
+      });
+      shaderModules.set(key, shaderModule);
+    }
+
+    return shaderModule;
+  }
 
   const pipelineGpuData = new Map();
 
@@ -665,103 +762,6 @@ export async function gltfDemo(startup_model) {
       resource: {buffer: instanceBuffer},
     }],
   });
-
-  function getShaderModule(args) {
-    const key = JSON.stringify(args);
-
-    let shaderModule = shaderModules.get(key);
-    if (!shaderModule) {
-      const code = wgsl`
-              struct Camera {
-                projection : mat4x4f,
-                view : mat4x4f,
-                position : vec3f,
-                time : f32,
-              };
-              @group(0) @binding(0) var<uniform> camera : Camera;
-
-              struct Model {
-                matrix: mat4x4f,
-                normalMat: mat4x4f,
-              }
-              @group(1) @binding(0) var<storage> instances : array<Model>;
-
-              struct Material {
-                baseColorFactor : vec4f,
-                alphaCutoff: f32,
-              };
-              @group(2) @binding(0) var<uniform> material : Material;
-              @group(2) @binding(1) var materialSampler : sampler;
-              @group(2) @binding(2) var baseColorTexture : texture_2d<f32>;
-
-              struct VertexInput {
-                @builtin(instance_index) instance : u32,
-                @location(${ShaderLocations.POSITION}) position : vec3f,
-                @location(${ShaderLocations.NORMAL}) normal : vec3f,
-
-                #if ${args.hasTexcoord}
-                  @location(${ShaderLocations.TEXCOORD_0}) texcoord : vec2f,
-                #endif
-              };
-
-              struct VertexOutput {
-                @builtin(position) position : vec4f,
-                @location(0) normal : vec3f,
-                @location(1) texcoord : vec2f,
-              };
-
-              @vertex
-              fn vertexMain(input : VertexInput) -> VertexOutput {
-                var output : VertexOutput;
-
-                let model = instances[input.instance];
-                output.position = camera.projection * camera.view * model.matrix * vec4f(input.position, 1);
-                output.normal = (camera.view * model.normalMat * vec4f(input.normal, 0)).xyz;
-
-                #if ${args.hasTexcoord}
-                  output.texcoord = input.texcoord;
-                #else
-                  output.texcoord = vec2f(0);
-                #endif
-
-                return output;
-              }
-
-              // Some hardcoded lighting
-              const lightDir = vec3f(0.25, 0.5, 1);
-              const lightColor = vec3f(1);
-              const ambientColor = vec3f(0.1);
-
-              @fragment
-              fn fragmentMain(input : VertexOutput) -> @location(0) vec4f {
-                let baseColor = textureSample(baseColorTexture, materialSampler, input.texcoord) * material.baseColorFactor;
-
-                #if ${args.useAlphaCutoff}
-                  // If the alpha mode is MASK discard any fragments below the alpha cutoff.
-                  if (baseColor.a < material.alphaCutoff) {
-                    discard;
-                  }
-                #endif
-
-                // An extremely simple directional lighting model, just to give our model some shape.
-                let N = normalize(input.normal);
-                let L = normalize(lightDir);
-                let NDotL = max(dot(N, L), 0.0);
-                let surfaceColor = (baseColor.rgb * ambientColor) + (baseColor.rgb * NDotL);
-
-                return vec4f(surfaceColor, baseColor.a);
-              }
-            `;
-
-      shaderModule = device.createShaderModule({
-        label: "Simple glTF rendering shader module",
-        code,
-      });
-      shaderModules.set(key, shaderModule);
-    }
-
-    return shaderModule;
-  }
 
   const colorAttachment = {
     // Appropriate target will be populated in onFrame
