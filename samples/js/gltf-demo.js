@@ -390,7 +390,6 @@ export async function gltfDemo(startup_model) {
 
   const primitiveInstances = {
     matrices: new Map(),
-    total: 0,
     arrayBuffer: null,
     offset: 0,
   };
@@ -402,7 +401,6 @@ export async function gltfDemo(startup_model) {
     } else {
       primitiveInstances.matrices.set(primitive, [node]);
     }
-    primitiveInstances.total++;
   }))
 
   const materialBindGroupLayout = device.createBindGroupLayout({
@@ -459,7 +457,7 @@ export async function gltfDemo(startup_model) {
 
   // Create a buffer large enough to contain all the instance matrices for the entire scene.
   const instanceBuffer = device.createBuffer({
-    size: 32 * Float32Array.BYTES_PER_ELEMENT * primitiveInstances.total,
+    size: 32 * Float32Array.BYTES_PER_ELEMENT * primitiveInstances.matrices.size,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true,
   });
