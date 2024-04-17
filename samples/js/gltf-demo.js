@@ -400,11 +400,6 @@ export async function gltfDemo(startup_model) {
   const gpuBuffers = Object.values(gltf.bufferViews).map((bufferView, index) =>
       createGpuBufferFromBufferView(device, bufferView,
           chunks[BIN_CHUNK_TYPE], bufferViewUsages[index]));
-  const gpuTextures = Object.values(gltf.textures ?? []).map(texture => ({
-    texture: imageTextures[texture.source],
-    sampler: texture.sampler ? gpuSamplers[texture.sampler] : gpuDefaultSampler
-  }));
-
   const worldMatrixMap = getWorldMatrixMap(gltf);
   const normalMap = getNormalMatrixMap(worldMatrixMap);
 
@@ -472,14 +467,7 @@ export async function gltfDemo(startup_model) {
     materialBufferArray[4] = material.alphaCutoff || 0.5;
     materialUniformBuffer.unmap();
 
-    let baseColor = gpuTextures[material.pbrMetallicRoughness?.baseColorTexture?.index];
-    if (!baseColor) {
-      baseColor = {
-        texture: createSolidColorTexture(device, 1, 1, 1, 1),
-        sampler: gpuDefaultSampler,
-      };
-    }
-
+    const texture = gltf.textures[material.pbrMetallicRoughness?.baseColorTexture?.index];
     materialGpuData.set(material, {
       bindGroup: device.createBindGroup({
         label: `glTF Material BindGroup`,
@@ -489,10 +477,11 @@ export async function gltfDemo(startup_model) {
           resource: {buffer: materialUniformBuffer},
         }, {
           binding: 1, // Sampler
-          resource: baseColor.sampler,
+          resource: gpuSamplers[texture.sampler] ?? gpuDefaultSampler,
         }, {
           binding: 2, // BaseColor
-          resource: baseColor.texture.createView(),
+          resource: (imageTextures[texture.source] ??
+              createSolidColorTexture(device, 1, 1, 1, 1)).createView()
         }],
       }),
     });
