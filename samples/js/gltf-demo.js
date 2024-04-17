@@ -388,7 +388,6 @@ export async function gltfDemo(startup_model) {
 
   orbitCamera(canvas, vec3.fromValues(0, 0, 0), 1.5, mtx => viewMatrix.set(mtx));
 
-  const pipelineGpuData = new Map();
   const shaderModules = new Map();
 
   const instanceBindGroupLayout = device.createBindGroupLayout({
@@ -477,6 +476,75 @@ export async function gltfDemo(startup_model) {
   });
 
   primitiveInstances.arrayBuffer = new Float32Array(instanceBuffer.getMappedRange());
+
+  const pipelineGpuData = new Map();
+
+  function getPipelineForPrimitive(args) {
+    const key = JSON.stringify(args);
+
+    const pipeline = pipelineGpuData.get(key);
+    if (pipeline) {
+      return pipeline;
+    }
+
+    const module = getShaderModule(args.shaderArgs);
+
+    const gpuPipeline = {
+      pipeline: device.createRenderPipeline({
+        label: "glTF renderer pipeline",
+        layout: device.createPipelineLayout({
+          label: "glTF Pipeline Layout",
+          bindGroupLayouts: [
+            frameBindGroupLayout,
+            instanceBindGroupLayout,
+            materialBindGroupLayout,
+          ]
+        }),
+        vertex: {
+          module,
+          entryPoint: "vertexMain",
+          buffers: args.buffers,
+        },
+        primitive: {
+          topology: args.topology,
+          // Make sure to apply the appropriate culling mode
+          cullMode: args.doubleSided ? "none" : "back",
+        },
+        multisample: {
+          count: 1,
+        },
+        depthStencil: {
+          format: "depth24plus",
+          depthWriteEnabled: true,
+          depthCompare: "less",
+        },
+        fragment: {
+          module,
+          entryPoint: "fragmentMain",
+          targets: [{
+            format: colorFormat,
+            // Apply the necessary blending
+            blend: args.alphaMode === "BLEND" ? {
+              color: {
+                srcFactor: "src-alpha",
+                dstFactor: "one-minus-src-alpha",
+              },
+              alpha: {
+                // This just prevents the canvas from having alpha "holes" in it.
+                srcFactor: "one",
+                dstFactor: "one",
+              }
+            } : undefined
+          }],
+        },
+      }),
+      // Cache a map of materials to the primitives that used them for each pipeline.
+      materialPrimitives: new Map(),
+    };
+
+    pipelineGpuData.set(key, gpuPipeline);
+    return gpuPipeline;
+  }
 
   for (const mesh of gltf.meshes) {
     for (const primitive of mesh.primitives) {
@@ -693,74 +761,6 @@ export async function gltfDemo(startup_model) {
     }
 
     return shaderModule;
-  }
-
-
-  function getPipelineForPrimitive(args) {
-    const key = JSON.stringify(args);
-
-    const pipeline = pipelineGpuData.get(key);
-    if (pipeline) {
-      return pipeline;
-    }
-
-    const module = getShaderModule(args.shaderArgs);
-
-    const gpuPipeline = {
-      pipeline: device.createRenderPipeline({
-        label: "glTF renderer pipeline",
-        layout: device.createPipelineLayout({
-          label: "glTF Pipeline Layout",
-          bindGroupLayouts: [
-            frameBindGroupLayout,
-            instanceBindGroupLayout,
-            materialBindGroupLayout,
-          ]
-        }),
-        vertex: {
-          module,
-          entryPoint: "vertexMain",
-          buffers: args.buffers,
-        },
-        primitive: {
-          topology: args.topology,
-          // Make sure to apply the appropriate culling mode
-          cullMode: args.doubleSided ? "none" : "back",
-        },
-        multisample: {
-          count: 1,
-        },
-        depthStencil: {
-          format: "depth24plus",
-          depthWriteEnabled: true,
-          depthCompare: "less",
-        },
-        fragment: {
-          module,
-          entryPoint: "fragmentMain",
-          targets: [{
-            format: colorFormat,
-            // Apply the necessary blending
-            blend: args.alphaMode === "BLEND" ? {
-              color: {
-                srcFactor: "src-alpha",
-                dstFactor: "one-minus-src-alpha",
-              },
-              alpha: {
-                // This just prevents the canvas from having alpha "holes" in it.
-                srcFactor: "one",
-                dstFactor: "one",
-              }
-            } : undefined
-          }],
-        },
-      }),
-      // Cache a map of materials to the primitives that used them for each pipeline.
-      materialPrimitives: new Map(),
-    };
-
-    pipelineGpuData.set(key, gpuPipeline);
-    return gpuPipeline;
   }
 
   const colorAttachment = {
