@@ -707,12 +707,12 @@ export async function gltfDemo(startup_model) {
         primitiveInstances.arrayBuffer.set(normalMap.get(instance), idx * 32 + 16);
       });
 
-      primitiveInstances.offset += instances.length;
       const gpuPrimitive = {
         buffers: sortedGpuBuffers,
         drawCount,
-        instances: primitiveInstances
+        instances: {first: primitiveInstances.offset, count: instances.length}
       };
+      primitiveInstances.offset += instances.length;
 
       if ("indices" in primitive) {
         const accessor = gltf.accessors[primitive.indices];
@@ -821,10 +821,10 @@ export async function gltfDemo(startup_model) {
           }
 
           if (primitive.indexBuffer) {
-            renderPass.drawIndexed(primitive.drawCount, primitive.instances.matrices.size, 0, 0,
+            renderPass.drawIndexed(primitive.drawCount, primitive.instances.count, 0, 0,
                 primitive.instances.first);
           } else {
-            renderPass.draw(primitive.drawCount, primitive.instances.matrices.size, 0,
+            renderPass.draw(primitive.drawCount, primitive.instances.count, 0,
                 primitive.instances.first);
           }
         }
