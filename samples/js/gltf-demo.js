@@ -701,7 +701,8 @@ export async function gltfDemo(startup_model) {
       const gpuPrimitive = {
         buffers: sortedGpuBuffers,
         drawCount,
-        instances: {first: primitiveInstancesOffset, count: instances.length}
+        firstInstance: primitiveInstancesOffset,
+        instanceCount: instances.length
       };
 
       instances.forEach((instance, i) => {
@@ -817,11 +818,11 @@ export async function gltfDemo(startup_model) {
           }
 
           if (primitive.indexBuffer) {
-            renderPass.drawIndexed(primitive.drawCount, primitive.instances.count, 0, 0,
-                primitive.instances.first);
+            renderPass.drawIndexed(
+                primitive.drawCount, primitive.instanceCount, 0, 0, primitive.firstInstance);
           } else {
-            renderPass.draw(primitive.drawCount, primitive.instances.count, 0,
-                primitive.instances.first);
+            renderPass.draw(
+                primitive.drawCount, primitive.instanceCount, 0, primitive.firstInstance);
           }
         }
       }
