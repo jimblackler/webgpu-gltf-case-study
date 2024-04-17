@@ -33,17 +33,6 @@ const BIN_CHUNK_TYPE = 0x004E4942;
 
 const FRAME_BUFFER_SIZE = Float32Array.BYTES_PER_ELEMENT * 36;
 
-function createSolidColorTexture(device, r, g, b, a) {
-  const data = new Uint8Array([r * 255, g * 255, b * 255, a * 255]);
-  const texture = device.createTexture({
-    size: {width: 1, height: 1},
-    format: "rgba8unorm",
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
-  });
-  device.queue.writeTexture({texture}, data, {}, {width: 1, height: 1});
-  return texture;
-}
-
 function componentCountForType(type) {
   switch (type) {
     case "SCALAR":
@@ -396,7 +385,6 @@ export async function gltfDemo(startup_model) {
   const gpuSamplers = Object.values(gltf.samplers ?? []).map(sampler =>
       createGpuSamplerFromSampler(device, sampler));
 
-  const gpuDefaultSampler = createGpuSamplerFromSampler(device, {name: "glTF default sampler"});
   const gpuBuffers = Object.values(gltf.bufferViews).map((bufferView, index) =>
       createGpuBufferFromBufferView(device, bufferView,
           chunks[BIN_CHUNK_TYPE], bufferViewUsages[index]));
@@ -477,11 +465,10 @@ export async function gltfDemo(startup_model) {
           resource: {buffer: materialUniformBuffer},
         }, {
           binding: 1, // Sampler
-          resource: gpuSamplers[texture.sampler] ?? gpuDefaultSampler,
+          resource: gpuSamplers[texture.sampler],
         }, {
           binding: 2, // BaseColor
-          resource: (imageTextures[texture.source] ??
-              createSolidColorTexture(device, 1, 1, 1, 1)).createView()
+          resource: imageTextures[texture.source].createView()
         }],
       }),
     });
