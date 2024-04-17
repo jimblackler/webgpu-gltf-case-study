@@ -559,8 +559,6 @@ export async function gltfDemo(startup_model) {
     return shaderModule;
   }
 
-  const pipelineGpuData = new Map();
-
   const instanceBindGroupLayout = device.createBindGroupLayout({
     label: `glTF Instance BindGroupLayout`,
     entries: [{
@@ -569,6 +567,8 @@ export async function gltfDemo(startup_model) {
       buffer: {type: "read-only-storage"},
     }],
   });
+
+  const pipelineGpuData = new Map();
 
   function getPipelineForPrimitive(args) {
     const key = JSON.stringify(args);
