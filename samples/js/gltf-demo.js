@@ -388,18 +388,15 @@ export async function gltfDemo(startup_model) {
 
   orbitCamera(canvas, vec3.fromValues(0, 0, 0), 1.5, mtx => viewMatrix.set(mtx));
 
-  const primitiveInstances = {
-    matrices: new Map(),
-    arrayBuffer: null,
-    offset: 0,
-  };
+  const primitiveInstancesMatrices = new Map();
+  let primitiveInstancesOffset = 0;
 
   gltf.nodes.forEach(node => gltf.meshes[node.mesh]?.primitives.forEach(primitive => {
-    const instances = primitiveInstances.matrices.get(primitive);
+    const instances = primitiveInstancesMatrices.get(primitive);
     if (instances) {
       instances.push(node);
     } else {
-      primitiveInstances.matrices.set(primitive, [node]);
+      primitiveInstancesMatrices.set(primitive, [node]);
     }
   }))
 
@@ -457,12 +454,12 @@ export async function gltfDemo(startup_model) {
 
   // Create a buffer large enough to contain all the instance matrices for the entire scene.
   const instanceBuffer = device.createBuffer({
-    size: 32 * Float32Array.BYTES_PER_ELEMENT * primitiveInstances.matrices.size,
+    size: 32 * Float32Array.BYTES_PER_ELEMENT * primitiveInstancesMatrices.size,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true,
   });
 
-  primitiveInstances.arrayBuffer = new Float32Array(instanceBuffer.getMappedRange());
+  const primitiveInstancesArrayBuffer = new Float32Array(instanceBuffer.getMappedRange());
 
   const shaderModules = new Map();
 
@@ -699,20 +696,20 @@ export async function gltfDemo(startup_model) {
       // Ensure that the gpuBuffers are saved in the same order as the buffer layout.
       const sortedGpuBuffers = sortedBufferLayout.map(buffer => _gpuBuffers.get(buffer));
 
-      const instances = primitiveInstances.matrices.get(primitive);
+      const instances = primitiveInstancesMatrices.get(primitive);
 
       instances.forEach((instance, i) => {
-        const idx = primitiveInstances.offset + i;
-        primitiveInstances.arrayBuffer.set(worldMatrixMap.get(instance), idx * 32);
-        primitiveInstances.arrayBuffer.set(normalMap.get(instance), idx * 32 + 16);
+        const idx = primitiveInstancesOffset + i;
+        primitiveInstancesArrayBuffer.set(worldMatrixMap.get(instance), idx * 32);
+        primitiveInstancesArrayBuffer.set(normalMap.get(instance), idx * 32 + 16);
       });
 
       const gpuPrimitive = {
         buffers: sortedGpuBuffers,
         drawCount,
-        instances: {first: primitiveInstances.offset, count: instances.length}
+        instances: {first: primitiveInstancesOffset, count: instances.length}
       };
-      primitiveInstances.offset += instances.length;
+      primitiveInstancesOffset += instances.length;
 
       if ("indices" in primitive) {
         const accessor = gltf.accessors[primitive.indices];
