@@ -388,14 +388,22 @@ export async function gltfDemo(startup_model) {
 
   orbitCamera(canvas, vec3.fromValues(0, 0, 0), 1.5, mtx => viewMatrix.set(mtx));
 
-  const instanceBindGroupLayout = device.createBindGroupLayout({
-    label: `glTF Instance BindGroupLayout`,
-    entries: [{
-      binding: 0, // Node uniforms
-      visibility: GPUShaderStage.VERTEX,
-      buffer: {type: "read-only-storage"},
-    }],
-  });
+  const primitiveInstances = {
+    matrices: new Map(),
+    total: 0,
+    arrayBuffer: null,
+    offset: 0,
+  };
+
+  gltf.nodes.forEach(node => gltf.meshes[node.mesh]?.primitives.forEach(primitive => {
+    const instances = primitiveInstances.matrices.get(primitive);
+    if (instances) {
+      instances.push(node);
+    } else {
+      primitiveInstances.matrices.set(primitive, [node]);
+    }
+    primitiveInstances.total++;
+  }))
 
   const materialBindGroupLayout = device.createBindGroupLayout({
     label: `glTF Material BindGroupLayout`,
@@ -413,23 +421,6 @@ export async function gltfDemo(startup_model) {
       texture: {},
     }], // Omitting additional material properties for simplicity
   });
-
-  const primitiveInstances = {
-    matrices: new Map(),
-    total: 0,
-    arrayBuffer: null,
-    offset: 0,
-  };
-
-  gltf.nodes.forEach(node => gltf.meshes[node.mesh]?.primitives.forEach(primitive => {
-    const instances = primitiveInstances.matrices.get(primitive);
-    if (instances) {
-      instances.push(node);
-    } else {
-      primitiveInstances.matrices.set(primitive, [node]);
-    }
-    primitiveInstances.total++;
-  }))
 
   const materialGpuData = new Map();
   for (const material of gltf.materials) {
@@ -575,6 +566,15 @@ export async function gltfDemo(startup_model) {
   }
 
   const pipelineGpuData = new Map();
+
+  const instanceBindGroupLayout = device.createBindGroupLayout({
+    label: `glTF Instance BindGroupLayout`,
+    entries: [{
+      binding: 0, // Node uniforms
+      visibility: GPUShaderStage.VERTEX,
+      buffer: {type: "read-only-storage"},
+    }],
+  });
 
   function getPipelineForPrimitive(args) {
     const key = JSON.stringify(args);
