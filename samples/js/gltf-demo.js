@@ -416,7 +416,7 @@ export async function gltfDemo(startup_model) {
     }], // Omitting additional material properties for simplicity
   });
 
-  const materialGpuData = new Map();
+  const materialBindGroups = new Map();
   for (const material of gltf.materials) {
     // Create a uniform buffer for this material and populate it with the material properties.
     const materialUniformBuffer = device.createBuffer({
@@ -433,22 +433,20 @@ export async function gltfDemo(startup_model) {
     materialUniformBuffer.unmap();
 
     const texture = gltf.textures[material.pbrMetallicRoughness?.baseColorTexture?.index];
-    materialGpuData.set(material, {
-      bindGroup: device.createBindGroup({
-        label: `glTF Material BindGroup`,
-        layout: materialBindGroupLayout,
-        entries: [{
-          binding: 0, // Material uniforms
-          resource: {buffer: materialUniformBuffer},
-        }, {
-          binding: 1, // Sampler
-          resource: gpuSamplers[texture.sampler],
-        }, {
-          binding: 2, // BaseColor
-          resource: imageTextures[texture.source].createView()
-        }],
-      }),
-    });
+    materialBindGroups.set(material, device.createBindGroup({
+      label: `glTF Material BindGroup`,
+      layout: materialBindGroupLayout,
+      entries: [{
+        binding: 0, // Material uniforms
+        resource: {buffer: materialUniformBuffer},
+      }, {
+        binding: 1, // Sampler
+        resource: gpuSamplers[texture.sampler],
+      }, {
+        binding: 2, // BaseColor
+        resource: imageTextures[texture.source].createView()
+      }],
+    }));
   }
 
   // Create a buffer large enough to contain all the instance matrices for the entire scene.
@@ -737,7 +735,7 @@ export async function gltfDemo(startup_model) {
       }).materialPrimitives;
 
       // Add the primitive to the list of primitives for this material.
-      const gpuMaterial = materialGpuData.get(material);
+      const gpuMaterial = materialBindGroups.get(material);
       const materialPrimitives = materialPrimitives1.get(gpuMaterial);
       if (materialPrimitives) {
         materialPrimitives.push(gpuPrimitive);
@@ -803,9 +801,9 @@ export async function gltfDemo(startup_model) {
 
       // Loop through every material that uses this pipeline and get an array of primitives
       // that uses that material.
-      for (const [material, primitives] of gpuPipeline1.materialPrimitives.entries()) {
+      for (const [bindGroup, primitives] of gpuPipeline1.materialPrimitives.entries()) {
         // Set the material bind group.
-        renderPass.setBindGroup(2, material.bindGroup);
+        renderPass.setBindGroup(2, bindGroup);
 
         // Loop through the primitives that use the current material/pipeline combo and draw
         // them as usual.
